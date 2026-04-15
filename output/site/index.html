@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SourceRank — Journalist Credibility Leaderboard</title>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 2rem 2rem 1rem;
+      border-bottom: 1px solid #1e2530;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      margin-top: 0.4rem;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .meta {
+      font-size: 0.75rem;
+      color: #475569;
+      margin-top: 0.3rem;
+    }
+
+    .filters {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 2rem;
+      flex-wrap: wrap;
+    }
+
+    .filters select {
+      background: #1e2530;
+      border: 1px solid #2d3748;
+      color: #e2e8f0;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .table-wrap {
+      padding: 0 2rem 3rem;
+      overflow-x: auto;
+    }
+
+    table#leaderboard {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    #leaderboard thead th {
+      background: #1a1f2e;
+      color: #94a3b8;
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #2d3748;
+      white-space: nowrap;
+    }
+
+    #leaderboard tbody tr {
+      border-bottom: 1px solid #1a1f2e;
+      transition: background 0.15s;
+    }
+
+    #leaderboard tbody tr:hover { background: #161b27; }
+
+    #leaderboard td {
+      padding: 0.7rem 1rem;
+      vertical-align: middle;
+    }
+
+    .rank { color: #475569; font-weight: 700; width: 2.5rem; }
+
+    .handle a {
+      color: #60a5fa;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .handle a:hover { text-decoration: underline; }
+
+    .name { color: #cbd5e1; }
+    .beat, .country { color: #64748b; font-size: 0.8rem; }
+
+    .score-cell {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .grade {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .grade-A\\+, .grade-A  { background: #064e3b; color: #6ee7b7; }
+    .grade-A\\-            { background: #065f46; color: #6ee7b7; }
+    .grade-B\\+, .grade-B  { background: #1e3a5f; color: #93c5fd; }
+    .grade-B\\-            { background: #1e3a5f; color: #93c5fd; }
+    .grade-C\\+, .grade-C  { background: #44403c; color: #fcd34d; }
+    .grade-C\\-            { background: #44403c; color: #fcd34d; }
+    .grade-D               { background: #431407; color: #fb923c; }
+    .grade-F               { background: #450a0a; color: #f87171; }
+
+    .accuracy { color: #86efac; }
+    .claims-count { color: #94a3b8; font-size: 0.8rem; }
+
+    .verdict-bar {
+      display: flex;
+      gap: 2px;
+      width: 120px;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .v-confirmed { background: #22c55e; }
+    .v-refuted   { background: #ef4444; }
+    .v-pending   { background: #3b82f6; }
+    .v-expired   { background: #6b7280; }
+
+    .dataTables_wrapper .dataTables_filter input {
+      background: #1e2530;
+      border: 1px solid #2d3748;
+      color: #e2e8f0;
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+    }
+
+    .dataTables_wrapper .dataTables_length select,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+      color: #64748b;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+      color: #94a3b8 !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+      background: #1e2530 !important;
+      border-color: #2d3748 !important;
+      color: #f8fafc !important;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #334155;
+      font-size: 0.75rem;
+      border-top: 1px solid #1a1f2e;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>SourceRank</h1>
+  <p>Journalist credibility scores based on verified claims on X (Twitter)</p>
+  <div class="meta" id="meta">Loading...</div>
+</header>
+
+<div class="filters">
+  <select id="filter-country">
+    <option value="">All Countries</option>
+  </select>
+  <select id="filter-beat">
+    <option value="">All Beats</option>
+  </select>
+</div>
+
+<div class="table-wrap">
+  <table id="leaderboard">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Handle</th>
+        <th>Name</th>
+        <th>Beat</th>
+        <th>Country</th>
+        <th>Score</th>
+        <th>Grade</th>
+        <th>Accuracy</th>
+        <th>Claims</th>
+        <th>Verdicts</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<footer>
+  SourceRank — Methodology is open and auditable. Scores are analytical estimates.
+  <a href="https://github.com" style="color:#3b82f6">View on GitHub</a>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script>
+const scoreColor = s => s >= 75 ? '#22c55e' : s >= 55 ? '#facc15' : '#ef4444';
+
+function verdictBar(j) {
+  const total = j.total_claims || 1;
+  const pct = v => Math.round((v / total) * 100);
+  return `
+    <div class="verdict-bar" title="Confirmed: ${j.confirmed} | Refuted: ${j.refuted} | Pending: ${j.pending} | Expired: ${j.expired}">
+      <div class="v-confirmed" style="width:${pct(j.confirmed)}%"></div>
+      <div class="v-refuted"   style="width:${pct(j.refuted)}%"></div>
+      <div class="v-pending"   style="width:${pct(j.pending)}%"></div>
+      <div class="v-expired"   style="width:${pct(j.expired)}%"></div>
+    </div>`;
+}
+
+fetch('data/scores.json')
+  .then(r => r.json())
+  .then(data => {
+    const journalists = data.journalists;
+    const genDate = new Date(data.generated_at).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric'
+    });
+    document.getElementById('meta').textContent =
+      `Last updated: ${genDate} · ${journalists.length} journalists tracked`;
+
+    // Populate filters
+    const countries = [...new Set(journalists.map(j => j.country).filter(Boolean))].sort();
+    const beats = [...new Set(journalists.map(j => j.beat).filter(Boolean))].sort();
+    countries.forEach(c => {
+      document.getElementById('filter-country').insertAdjacentHTML(
+        'beforeend', `<option value="${c}">${c}</option>`);
+    });
+    beats.forEach(b => {
+      document.getElementById('filter-beat').insertAdjacentHTML(
+        'beforeend', `<option value="${b}">${b}</option>`);
+    });
+
+    // Render rows
+    const tbody = document.getElementById('tbody');
+    journalists.forEach((j, i) => {
+      tbody.insertAdjacentHTML('beforeend', `
+        <tr data-country="${j.country}" data-beat="${j.beat}">
+          <td class="rank">${i + 1}</td>
+          <td class="handle"><a href="https://x.com/${j.handle}" target="_blank">@${j.handle}</a></td>
+          <td class="name">${j.name || j.handle}</td>
+          <td class="beat">${j.beat || '—'}</td>
+          <td class="country">${j.country || '—'}</td>
+          <td class="score-cell" style="color:${scoreColor(j.score)}">${j.score}</td>
+          <td><span class="grade grade-${j.grade.replace('+','\\+').replace('-','\\-')}">${j.grade}</span></td>
+          <td class="accuracy">${j.accuracy_rate}%</td>
+          <td class="claims-count">${j.total_claims}</td>
+          <td>${verdictBar(j)}</td>
+        </tr>`);
+    });
+
+    // Init DataTable
+    const table = $('#leaderboard').DataTable({
+      pageLength: 25,
+      order: [[5, 'desc']],
+      columnDefs: [{ orderable: false, targets: [9] }],
+    });
+
+    // Wire up custom filters
+    document.getElementById('filter-country').addEventListener('change', function() {
+      table.column(4).search(this.value).draw();
+    });
+    document.getElementById('filter-beat').addEventListener('change', function() {
+      table.column(3).search(this.value).draw();
+    });
+  })
+  .catch(() => {
+    document.getElementById('tbody').innerHTML =
+      '<tr><td colspan="10" style="text-align:center;padding:2rem;color:#475569">' +
+      'No data yet. Run the pipeline first: <code>python scheduler.py</code></td></tr>';
+    document.getElementById('meta').textContent = 'No data loaded';
+  });
+</script>
+</body>
+</html>

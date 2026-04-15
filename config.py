@@ -1,0 +1,58 @@
+"""
+SourceRank configuration.
+Copy this file to config_local.py and fill in your API keys.
+config_local.py is gitignored and never committed.
+"""
+
+import os
+
+# --- Paths ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+DB_DIR = os.path.join(DATA_DIR, "db")
+
+TWEETS_DB = os.path.join(DB_DIR, "tweets.db")
+CLAIMS_DB = os.path.join(DB_DIR, "claims.db")
+
+JOURNALISTS_CSV = os.path.join(DATA_DIR, "journalists.csv")
+RSS_SOURCES_CSV = os.path.join(DATA_DIR, "rss_sources.csv")
+
+OUTPUT_DIR = os.path.join(BASE_DIR, "output", "site", "data")
+
+# --- Scoring weights ---
+SCORE_WEIGHTS = {
+    "accuracy_rate": 0.40,
+    "prediction_score": 0.25,
+    "correction_behavior": 0.15,
+    "source_quality": 0.10,
+    "spam_index": 0.10,
+}
+
+# Verification windows in days by claim type
+VERIFICATION_WINDOWS = {
+    "breaking": 7,
+    "prediction": 30,
+    "exclusive": 14,
+    "statistic": 30,
+    "general": 14,
+}
+
+# How many months back to scrape on first run
+INITIAL_SCRAPE_MONTHS = 6
+
+# --- X / Twitter API (optional — snscrape works without keys) ---
+X_BEARER_TOKEN = os.environ.get("X_BEARER_TOKEN", "")
+
+# --- Ollama (local LLM for claim extraction) ---
+OLLAMA_HOST = "http://localhost:11434"
+OLLAMA_MODEL = "mistral"  # or "llama3", "gemma2" etc.
+
+# --- Google News ---
+GOOGLE_NEWS_LANG = "en"
+GOOGLE_NEWS_PERIOD = "7d"
+
+# --- Pipeline schedule ---
+# Used by scheduler.py — how often to run each step
+SCRAPE_INTERVAL_DAYS = 7
+VERIFY_INTERVAL_DAYS = 1
+SCORE_INTERVAL_DAYS = 7

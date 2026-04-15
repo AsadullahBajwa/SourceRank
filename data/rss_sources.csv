@@ -1,0 +1,21 @@
+name,url,country,language,tier
+Reuters World,https://feeds.reuters.com/reuters/worldNews,global,en,1
+Reuters Politics,https://feeds.reuters.com/Reuters/PoliticsNews,global,en,1
+AP News Top,https://apnews.com/rss,global,en,1
+BBC World,https://feeds.bbci.co.uk/news/world/rss.xml,global,en,1
+BBC US,https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml,US,en,1
+NPR News,https://feeds.npr.org/1001/rss.xml,US,en,2
+NYT Politics,https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml,US,en,1
+Washington Post,https://feeds.washingtonpost.com/rss/national,US,en,1
+Politico,https://rss.politico.com/politics-news.xml,US,en,2
+Dawn Pakistan,https://www.dawn.com/feeds/home,Pakistan,en,1
+The News International,https://www.thenews.com.pk/rss/1/1,Pakistan,en,1
+Express Tribune,https://tribune.com.pk/feed/home,Pakistan,en,2
+Geo News,https://www.geo.tv/rss/1,Pakistan,en,1
+ARY News,https://arynews.tv/feed/,Pakistan,en,2
+BBC Urdu,https://feeds.bbci.co.uk/urdu/rss.xml,Pakistan,ur,1
+Guardian UK,https://www.theguardian.com/world/rss,UK,en,1
+BBC UK,https://feeds.bbci.co.uk/news/uk/rss.xml,UK,en,1
+Sky News UK,https://feeds.skynews.com/feeds/rss/uk.xml,UK,en,2
+The Hindu,https://www.thehindu.com/news/national/feeder/default.rss,India,en,1
+NDTV India,https://feeds.feedburner.com/ndtvnews-india-news,India,en,1
