@@ -45,7 +45,7 @@ X_BEARER_TOKEN = os.environ.get("X_BEARER_TOKEN", "")
 
 # --- Ollama (local LLM for claim extraction) ---
 OLLAMA_HOST = "http://localhost:11434"
-OLLAMA_MODEL = "mistral"  # or "llama3", "gemma2" etc.
+OLLAMA_MODEL = "qwen2.5:14b"
 
 # --- Google News ---
 GOOGLE_NEWS_LANG = "en"
