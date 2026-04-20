@@ -83,39 +83,126 @@ def get_db(path: str) -> sqlite3.Connection:
 # X login
 # ---------------------------------------------------------------------------
 
+def fill_input(page, selectors: list[str], value: str, timeout: int = 15000) -> bool:
+    """Try multiple selectors until one works. Uses type() to simulate real keystrokes."""
+    for selector in selectors:
+        try:
+            el = page.wait_for_selector(selector, timeout=timeout)
+            if el:
+                el.click()
+                time.sleep(0.5)
+                el.triple_click()           # select any existing text
+                el.press("Backspace")       # clear it
+                page.keyboard.type(value, delay=50)   # type char by char
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def dismiss_cookies(page):
+    """Dismiss cookie banner by trying all known button texts."""
+    for text in ["Accept all cookies", "Accept all", "Allow all cookies", "Agree"]:
+        try:
+            btn = page.wait_for_selector(f'button:has-text("{text}")', timeout=3000)
+            if btn:
+                btn.click()
+                log.info(f"Cookie banner dismissed: '{text}'")
+                time.sleep(2)
+                return
+        except Exception:
+            continue
+
+
 def login_to_x(page, username: str, password: str) -> bool:
     log.info("Logging into X ...")
     try:
-        page.goto("https://x.com/i/flow/login", wait_until="networkidle", timeout=30000)
-        time.sleep(2)
+        # Go to homepage first to accept cookies before login flow
+        page.goto("https://x.com", wait_until="domcontentloaded", timeout=60000)
+        time.sleep(3)
+        dismiss_cookies(page)
 
-        # Enter username
-        page.get_by_label("Phone, email, or username").fill(username)
-        page.keyboard.press("Enter")
-        time.sleep(2)
+        # Now go to login
+        page.goto("https://x.com/i/flow/login", wait_until="domcontentloaded", timeout=60000)
+        time.sleep(3)
+        dismiss_cookies(page)
 
-        # Handle "enter your phone/username" verification step if it appears
-        unusual = page.query_selector('input[data-testid="ocfEnterTextTextInput"]')
-        if unusual:
-            unusual.fill(username)
+        # Step 2: Click the input field and type username via keyboard
+        try:
+            page.wait_for_selector("input", timeout=15000)
+            page.evaluate("document.querySelector('input').click()")
+            time.sleep(0.5)
+            page.keyboard.type(username, delay=80)
+            log.info("Username typed.")
+        except Exception as e:
+            log.error(f"Could not type username: {e}")
+            page.screenshot(path="debug_login.png")
+            return False
+
+        time.sleep(1)
+
+        # Click Next via JS to avoid focus issues
+        try:
+            page.evaluate("""
+                const btns = Array.from(document.querySelectorAll('button'));
+                const next = btns.find(b => b.textContent.trim() === 'Next');
+                if (next) next.click();
+            """)
+        except Exception:
             page.keyboard.press("Enter")
-            time.sleep(2)
+        time.sleep(3)
 
-        # Enter password
-        page.get_by_label("Password", exact=True).fill(password)
-        page.keyboard.press("Enter")
-        time.sleep(4)
+        # Step 3: Handle unusual activity check
+        try:
+            page.wait_for_selector('input[data-testid="ocfEnterTextTextInput"]', timeout=4000)
+            log.info("Unusual activity check — re-entering username.")
+            page.evaluate("document.querySelector('input[data-testid=\"ocfEnterTextTextInput\"]').click()")
+            page.keyboard.type(username, delay=80)
+            page.keyboard.press("Enter")
+            time.sleep(3)
+        except Exception:
+            pass
 
-        # Verify login succeeded
+        # Step 4: Type password via keyboard
+        try:
+            page.wait_for_selector('input[type="password"]', timeout=15000)
+            page.evaluate("document.querySelector('input[type=\"password\"]').click()")
+            time.sleep(0.5)
+            page.keyboard.type(password, delay=80)
+            log.info("Password typed.")
+        except Exception as e:
+            log.error(f"Could not type password: {e}")
+            page.screenshot(path="debug_password.png")
+            return False
+
+        time.sleep(1)
+
+        # Click Login via JS
+        try:
+            page.evaluate("""
+                const btns = Array.from(document.querySelectorAll('button'));
+                const login = btns.find(b => b.textContent.trim() === 'Log in');
+                if (login) login.click();
+            """)
+        except Exception:
+            page.keyboard.press("Enter")
+        time.sleep(5)
+
+        # Verify login
         if "home" in page.url or page.query_selector('[data-testid="SideNav_AccountSwitcher_Button"]'):
             log.info("Login successful.")
             return True
 
-        log.error("Login may have failed — check credentials in .env")
+        page.screenshot(path="debug_after_login.png")
+        log.error("Login may have failed — screenshot saved to debug_after_login.png")
         return False
 
     except Exception as e:
         log.error(f"Login error: {e}")
+        try:
+            page.screenshot(path="debug_error.png")
+        except Exception:
+            pass
         return False
 
 
@@ -163,32 +250,47 @@ def cutoff_reached(tweet_date_str: str, cutoff: datetime.datetime) -> bool:
         return False
 
 
-def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection) -> int:
-    cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=months * 30)
-    url = f"https://x.com/{handle}"
-    log.info(f"Scraping @{handle} (cutoff: {cutoff.date()}) ...")
-
-    try:
-        page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        time.sleep(3)
-    except Exception as e:
-        log.error(f"@{handle}: failed to load profile — {e}")
+def scrape_month(page, handle: str, since: str, until: str,
+                  conn: sqlite3.Connection, seen_ids: set) -> int:
+    """Scrape one month window for a journalist using X search."""
+    search_url = (
+        f"https://x.com/search?q=from%3A{handle}%20since%3A{since}%20until%3A{until}"
+        f"&src=typed_query&f=live"
+    )
+    for attempt in range(3):
+        try:
+            page.goto(search_url, wait_until="domcontentloaded", timeout=30000)
+            time.sleep(4)
+            # Detect rate limit / error page
+            if page.query_selector('text="Something went wrong"') or \
+               page.query_selector('[data-testid="error-detail"]'):
+                wait = 30 + attempt * 30
+                log.warning(f"@{handle} [{since}]: X rate limit hit — waiting {wait}s ...")
+                time.sleep(wait)
+                continue
+            break
+        except Exception as e:
+            log.warning(f"@{handle} [{since}→{until}]: failed — {e}")
+            return 0
+    else:
+        log.error(f"@{handle} [{since}→{until}]: gave up after 3 attempts")
         return 0
 
     scraped_at = datetime.datetime.utcnow().isoformat()
     new_count = 0
-    seen_ids: set[str] = set()
     no_new_streak = 0
     scroll_attempts = 0
-    max_scrolls = 300  # safety cap
+    max_scrolls = 100
+
+    # Get current scroll height to do incremental scrolling
+    current_y = 0
 
     while scroll_attempts < max_scrolls:
+        # Extract all currently visible tweets before scrolling
         tweet_articles = page.query_selector_all('article[data-testid="tweet"]')
 
-        stop = False
         for article in tweet_articles:
             try:
-                # Get tweet URL / ID
                 link_el = article.query_selector('a[href*="/status/"]')
                 tweet_url = link_el.get_attribute("href") if link_el else ""
                 tweet_id = extract_tweet_id_from_url(tweet_url)
@@ -196,25 +298,22 @@ def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection) -> 
                     continue
                 seen_ids.add(tweet_id)
 
-                # Skip retweets
-                is_retweet = 1 if article.query_selector('[data-testid="socialContext"]') else 0
+                social_ctx = article.query_selector('[data-testid="socialContext"]')
+                ctx_text = social_ctx.inner_text().lower() if social_ctx else ""
+                is_pinned = "pinned" in ctx_text
+                is_retweet = 1 if (social_ctx and not is_pinned) else 0
 
-                # Get text
+                if is_pinned:
+                    continue
+
                 text_el = article.query_selector('[data-testid="tweetText"]')
                 text = text_el.inner_text() if text_el else ""
                 if not text.strip():
                     continue
 
-                # Get date
                 time_el = article.query_selector("time")
                 created_at = parse_tweet_date(time_el)
 
-                # Check cutoff
-                if cutoff_reached(created_at, cutoff):
-                    stop = True
-                    break
-
-                # Get stats
                 reply_el = article.query_selector('[data-testid="reply"] span')
                 rt_el = article.query_selector('[data-testid="retweet"] span')
                 like_el = article.query_selector('[data-testid="like"] span')
@@ -234,23 +333,13 @@ def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection) -> 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
-                        tweet_id,
-                        handle.lower(),
-                        text,
-                        created_at,
-                        retweet_count,
-                        like_count,
-                        reply_count,
-                        is_retweet,
-                        is_reply,
-                        "",
-                        full_url,
-                        scraped_at,
+                        tweet_id, handle.lower(), text, created_at,
+                        retweet_count, like_count, reply_count,
+                        is_retweet, is_reply, "", full_url, scraped_at,
                     ),
                 )
                 if conn.execute("SELECT changes()").fetchone()[0]:
                     new_count += 1
-                    no_new_streak = 0
 
             except Exception as e:
                 log.debug(f"Tweet parse error: {e}")
@@ -258,30 +347,64 @@ def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection) -> 
 
         conn.commit()
 
-        if stop:
-            log.info(f"@{handle}: reached cutoff date.")
-            break
+        prev_seen = len(seen_ids)
 
-        # Scroll down
-        prev_count = len(seen_ids)
-        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        time.sleep(2.5)
+        # Scroll in small increments (600px) so tweets have time to render
+        # before they leave the viewport and get removed from DOM
+        current_y += 600
+        page.evaluate(f"window.scrollTo(0, {current_y})")
+        time.sleep(3.5)   # wait for lazy-loaded tweets to render
+
+        # Every 5 scrolls do a full-height jump to keep momentum
+        if scroll_attempts % 5 == 0:
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            time.sleep(4)
+
         scroll_attempts += 1
 
-        if len(seen_ids) == prev_count:
+        if len(seen_ids) == prev_seen:
             no_new_streak += 1
-        if no_new_streak >= 5:
-            log.info(f"@{handle}: no new tweets after 5 scrolls — profile end reached.")
+        else:
+            no_new_streak = 0
+        if no_new_streak >= 10:
             break
 
-    log.info(f"@{handle}: {new_count} new tweets stored ({len(seen_ids)} seen total).")
+    return new_count
 
+
+def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection) -> int:
+    """Scrape a journalist month by month to maximise tweet coverage."""
+    now = datetime.datetime.utcnow()
+    upper_cutoff = now - datetime.timedelta(days=config.SKIP_RECENT_DAYS)
+    lower_cutoff = now - datetime.timedelta(days=months * 30)
+
+    log.info(f"Scraping @{handle} | window: {lower_cutoff.date()} → {upper_cutoff.date()}")
+
+    # Build list of monthly windows from oldest to newest
+    windows = []
+    cursor = lower_cutoff
+    while cursor < upper_cutoff:
+        next_cursor = min(cursor + datetime.timedelta(days=30), upper_cutoff)
+        windows.append((cursor.strftime("%Y-%m-%d"), next_cursor.strftime("%Y-%m-%d")))
+        cursor = next_cursor
+
+    seen_ids: set[str] = set()
+    total_new = 0
+    scraped_at = datetime.datetime.utcnow().isoformat()
+
+    for since, until in windows:
+        log.info(f"  @{handle}: month {since} → {until}")
+        new = scrape_month(page, handle, since, until, conn, seen_ids)
+        total_new += new
+        time.sleep(8 + (len(windows) % 3) * 2)  # 8-12s between months to avoid rate limiting
+
+    log.info(f"@{handle}: {total_new} new tweets stored across {len(windows)} months.")
     conn.execute(
         "INSERT INTO scrape_log (handle, scraped_at, tweet_count, status) VALUES (?, ?, ?, ?)",
-        (handle.lower(), scraped_at, new_count, "ok"),
+        (handle.lower(), scraped_at, total_new, "ok"),
     )
     conn.commit()
-    return new_count
+    return total_new
 
 
 # ---------------------------------------------------------------------------
@@ -296,7 +419,12 @@ def load_journalists(csv_path: str) -> list[dict]:
 def load_credentials() -> tuple[str, str]:
     try:
         from dotenv import load_dotenv
-        load_dotenv()
+        # Windows sometimes saves .env as UTF-16 — try both encodings
+        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+        try:
+            load_dotenv(dotenv_path=env_path, encoding="utf-8")
+        except UnicodeDecodeError:
+            load_dotenv(dotenv_path=env_path, encoding="utf-16")
     except ImportError:
         pass
 
@@ -329,7 +457,15 @@ def main():
         log.error("Playwright not installed.\nRun: pip install playwright && playwright install chromium")
         sys.exit(1)
 
-    username, password = load_credentials()
+    session_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "session.json")
+    if not os.path.exists(session_path):
+        log.error(
+            "No saved session found.\n"
+            "Run this first to log in manually:\n"
+            "  python save_session.py"
+        )
+        sys.exit(1)
+
     journalists = load_journalists(config.JOURNALISTS_CSV)
 
     if args.handle:
@@ -342,8 +478,13 @@ def main():
     total = 0
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=not args.no_headless)
+        browser = p.chromium.launch(
+            headless=not args.no_headless,
+            channel="chrome",
+            args=["--disable-blink-features=AutomationControlled", "--no-sandbox"],
+        )
         context = browser.new_context(
+            storage_state=session_path,
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -351,12 +492,11 @@ def main():
             ),
             viewport={"width": 1280, "height": 900},
         )
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        """)
         page = context.new_page()
-
-        if not login_to_x(page, username, password):
-            browser.close()
-            conn.close()
-            sys.exit(1)
+        log.info("Session loaded — skipping login.")
 
         for j in journalists:
             if j.get("active", "true").lower() != "true":
