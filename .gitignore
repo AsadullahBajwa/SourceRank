@@ -16,6 +16,9 @@ env/
 config_local.py
 .env
 
+# Saved browser session (contains auth cookies — never commit)
+data/session.json
+
 # Databases (large binary files — generated locally)
 data/db/*.db
 data/db/*.db-wal
@@ -37,3 +40,7 @@ desktop.ini
 
 # Claude Code local settings
 .claude/
+
+# Debug screenshots (local only)
+debug_*.png
+*.png
