@@ -17,6 +17,7 @@ import datetime
 import logging
 import json
 import re
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
@@ -130,12 +131,19 @@ def extract_with_ollama(tweet_text: str) -> dict | None:
         prompt = EXTRACTION_PROMPT.format(tweet=tweet_text.replace('"', "'"))
         response = requests.post(
             f"{config.OLLAMA_HOST}/api/generate",
-            json={"model": config.OLLAMA_MODEL, "prompt": prompt, "stream": False},
-            timeout=30,
+            json={
+                "model": config.OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {"temperature": 0, "num_predict": 150},
+            },
+            timeout=90,
         )
         if response.status_code == 200:
-            raw = response.json().get("response", "")
-            return json.loads(raw.strip())
+            raw = response.json().get("response", "").strip()
+            # Strip markdown code fences if model adds them
+            raw = re.sub(r"```json|```", "", raw).strip()
+            return json.loads(raw)
     except Exception as e:
         log.debug(f"Ollama extraction failed: {e}")
     return None
@@ -247,7 +255,9 @@ def main():
     log.info(f"Processing {len(tweets)} unprocessed tweets ...")
 
     extracted = 0
-    for tweet in tweets:
+    for i, tweet in enumerate(tweets, 1):
+        if i % 10 == 0 or i == 1:
+            log.info(f"Progress: {i}/{len(tweets)} tweets | claims found: {extracted}")
         if process_tweet(tweet, claims_conn, dry_run=args.dry_run):
             extracted += 1
 
