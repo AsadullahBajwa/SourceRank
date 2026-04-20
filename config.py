@@ -37,8 +37,11 @@ VERIFICATION_WINDOWS = {
     "general": 14,
 }
 
-# How many months back to scrape on first run
-INITIAL_SCRAPE_MONTHS = 6
+# Scraping window:
+# Skip tweets newer than this — too recent to verify claims
+SKIP_RECENT_DAYS = 30
+# Go this many months back from the skip cutoff
+INITIAL_SCRAPE_MONTHS = 6  # scrapes from 30 days ago back to ~7 months ago
 
 # --- X / Twitter API (optional — snscrape works without keys) ---
 X_BEARER_TOKEN = os.environ.get("X_BEARER_TOKEN", "")
