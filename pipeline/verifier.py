@@ -11,6 +11,7 @@ Usage:
     python pipeline/verifier.py --handle mkraju  # one journalist
     python pipeline/verifier.py --dry-run        # print verdicts without saving
     python pipeline/verifier.py --no-google      # skip Google News (offline mode)
+    python pipeline/verifier.py --recheck        # re-verify UNVERIFIED and EXPIRED claims
 """
 
 import sys
@@ -48,6 +49,24 @@ TIER1_SOURCES = {
 
 # Delay between Google News requests to avoid rate limiting
 GOOGLE_NEWS_DELAY = 3.0
+
+# (claim_pattern, refutation_pattern) — if both match, the claim is contradicted.
+CONTRADICTION_PAIRS = [
+    (r"will resign",
+     r"den(ies|ied) resignation|refuses to resign|no plans to resign|stays on"),
+    (r"arrested",
+     r"not arrested|released without charge|acquitted|cleared"),
+    (r"fired|dismissed|ousted|removed",
+     r"keeps (his|her|their) job|reinstated|not fired|stays as"),
+    (r"will (be )?charged|indicted",
+     r"no charges|charges dropped|not charged|cleared"),
+    (r"confirmed|verified|authenticated",
+     r"fake|false|fabricated|denied|hoax"),
+    (r"won|victory|elected",
+     r"lost|defeated|conceded|election loss"),
+    (r"died|dead|passed away",
+     r"alive|not dead|recovering|discharged from hospital"),
+]
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +219,22 @@ def search_google_news(claim_text: str, entities: list[str],
 
 
 # ---------------------------------------------------------------------------
+# Contradiction detection
+# ---------------------------------------------------------------------------
+
+def check_contradictions(claim_text: str, articles: list[dict]) -> bool:
+    """Return True if any article title contradicts the claim."""
+    for claim_pat, refute_pat in CONTRADICTION_PAIRS:
+        if not re.search(claim_pat, claim_text, re.IGNORECASE):
+            continue
+        for article in articles:
+            title = article.get("title", "")
+            if re.search(refute_pat, title, re.IGNORECASE):
+                return True
+    return False
+
+
+# ---------------------------------------------------------------------------
 # Verdict logic
 # ---------------------------------------------------------------------------
 
@@ -215,9 +250,17 @@ def determine_verdict(claim: sqlite3.Row,
             return VERDICT_EXPIRED, "", ""
         return VERDICT_UNVERIFIED, "", ""
 
-    top = all_matches[0]
+    top    = all_matches[0]
     source = top.get("source_name", "")
     url    = top.get("url", "")
+
+    # Contradiction check — REFUTED if tier-1 source confirms the contradiction,
+    # UNVERIFIED if only lower-tier sources carry the refuting story.
+    if check_contradictions(claim["claim_text"], all_matches):
+        has_tier1 = any(a.get("source_name") in TIER1_SOURCES for a in all_matches)
+        if has_tier1:
+            return VERDICT_REFUTED, source, url
+        return VERDICT_UNVERIFIED, source, url
 
     # Tier-1 source → CONFIRMED
     if source in TIER1_SOURCES and google_matches:
@@ -291,8 +334,12 @@ def verify_claim(claim: sqlite3.Row, claims_conn: sqlite3.Connection,
     return verdict
 
 
-def get_pending_claims(handle: str | None, conn: sqlite3.Connection) -> list:
-    query  = "SELECT * FROM claims WHERE verdict = 'PENDING'"
+def get_pending_claims(handle: str | None, conn: sqlite3.Connection,
+                       recheck: bool = False) -> list:
+    if recheck:
+        query = "SELECT * FROM claims WHERE verdict IN ('PENDING', 'UNVERIFIED', 'EXPIRED')"
+    else:
+        query = "SELECT * FROM claims WHERE verdict = 'PENDING'"
     params = []
     if handle:
         query += " AND handle = ?"
@@ -309,13 +356,16 @@ def main():
     parser.add_argument("--handle",    help="Verify one journalist only")
     parser.add_argument("--dry-run",   action="store_true")
     parser.add_argument("--no-google", action="store_true", help="Skip Google News (offline mode)")
+    parser.add_argument("--recheck",   action="store_true",
+                        help="Re-verify UNVERIFIED and EXPIRED claims in addition to PENDING")
     args = parser.parse_args()
 
     claims_conn = get_claims_db(config.CLAIMS_DB)
-    claims      = get_pending_claims(args.handle, claims_conn)
+    claims      = get_pending_claims(args.handle, claims_conn, recheck=args.recheck)
 
     use_google = not args.no_google
-    log.info(f"Verifying {len(claims)} claims | Google News: {'ON' if use_google else 'OFF'}")
+    log.info(f"Verifying {len(claims)} claims | Google News: {'ON' if use_google else 'OFF'}"
+             + (" | recheck=ON" if args.recheck else ""))
 
     verdicts = {
         VERDICT_CONFIRMED: 0, VERDICT_REFUTED: 0,
