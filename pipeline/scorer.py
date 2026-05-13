@@ -124,9 +124,11 @@ def score_journalist(journalist: dict, claims: list[dict],
         + spam * weights["spam_index"]
     )
 
-    final_score = round(composite * 100, 1)
-
     resolved = [c for c in claims if c["verdict"] in ("CONFIRMED", "REFUTED")]
+    final_score = round(composite * 100, 1)
+    min_resolved = getattr(config, "MIN_RESOLVED_CLAIMS_FOR_RANKING", 20)
+    eligible = len(resolved) >= min_resolved
+
     return {
         "handle": handle,
         "name": journalist.get("name", handle),
@@ -134,6 +136,9 @@ def score_journalist(journalist: dict, claims: list[dict],
         "country": journalist.get("country", ""),
         "score": final_score,
         "grade": score_to_grade(final_score),
+        "eligible": eligible,
+        "rank_status": "ranked" if eligible else "insufficient_data",
+        "min_resolved_claims": min_resolved,
         "accuracy_rate": round(accuracy * 100, 1),
         "prediction_score": round(prediction * 100, 1),
         "correction_score": round(correction * 100, 1),
@@ -202,7 +207,7 @@ def main():
         log.info(f"@{j['handle']:30s}  score={score['score']:5.1f}  grade={score['grade']}  "
                  f"claims={score['total_claims']}  confirmed={score['confirmed']}")
 
-    scores.sort(key=lambda x: x["score"], reverse=True)
+    scores.sort(key=lambda x: (x["eligible"], x["score"]), reverse=True)
 
     output = {
         "generated_at": datetime.datetime.utcnow().isoformat(),

@@ -40,6 +40,7 @@ desktop.ini
 
 # Claude Code local settings
 .claude/
+CLAUDE.md
 
 # Debug screenshots (local only)
 debug_*.png

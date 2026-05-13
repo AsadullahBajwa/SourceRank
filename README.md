@@ -28,7 +28,7 @@ SourceRank fills that gap.
 A curated list of journalists per country and beat. Each journalist has a handle, beat (politics, finance, tech, etc.), country, and follower tier.
 
 ### 2. Tweet Scraping
-Tweets are scraped and stored locally in a SQLite database. The pipeline pulls historical tweets (up to 6 months) and runs incrementally on a weekly schedule.
+Tweets are scraped and stored locally in a SQLite database. The pipeline pulls historical tweets up to 18 months back, skipping the newest 30 days so claims have time to resolve, and runs incrementally on a weekly schedule.
 
 ### 3. Claim Extraction
 Each tweet is analyzed to extract structured claims:
@@ -97,15 +97,15 @@ source-ranker/
 
 ## Roadmap
 
-### Phase 1 — Local MVP (Current)
+### Phase 1 - Local MVP (Current)
 - [x] Project structure and schema design
-- [ ] Tweet scraper using snscrape (no API cost)
-- [ ] SQLite schema for tweets, claims, verdicts
-- [ ] Claim extraction pipeline (local LLM via Ollama)
-- [ ] RSS-based verification engine
-- [ ] Scoring algorithm
-- [ ] Static leaderboard site
-- [ ] GitHub Actions for weekly auto-update
+- [x] Tweet scraper using Playwright session auth (no X API cost)
+- [x] SQLite schema for tweets, claims, verdicts
+- [x] Claim extraction pipeline (local LLM via Ollama)
+- [x] RSS-based verification engine
+- [x] Scoring algorithm with minimum-sample rank eligibility
+- [x] Static leaderboard site
+- [x] GitHub Actions static validation
 
 ### Phase 2 — Country Expansion
 Scale the journalist registry to cover top 100 journalists per country:
@@ -133,14 +133,14 @@ Scale the journalist registry to cover top 100 journalists per country:
 
 | Layer | Tool | Notes |
 |---|---|---|
-| Tweet scraping | snscrape / X API free tier | No cost |
+| Tweet scraping | Playwright + saved X session | No X API cost |
 | Storage | SQLite | Local, portable |
-| Claim extraction | Ollama + Mistral 7B / Llama 3 | Runs locally, no API cost |
+| Claim extraction | Ollama + qwen2.5:7b | Runs locally, no API cost |
 | News verification | RSS parsing + Google News free | No cost |
 | Scoring | Python | Custom weighted model |
 | Frontend | Static HTML + DataTables.js | No server needed |
 | Hosting | GitHub Pages | Free |
-| Scheduling | Windows Task Scheduler / GitHub Actions | Free |
+| Scheduling | Windows Task Scheduler locally; GitHub Actions validates code/site only | Free |
 
 **Estimated monthly cost to run: $0**
 
@@ -150,10 +150,10 @@ Scale the journalist registry to cover top 100 journalists per country:
 
 The credibility score is designed to be:
 
-- **Transparent** — formula and weights are public and auditable
-- **Retroactive** — scores are based on what actually happened, not intent
-- **Apolitical** — the same logic applies regardless of a journalist's political leaning
-- **Time-weighted** — recent accuracy matters more than events from a year ago
+- **Transparent** - formula and weights are public and auditable
+- **Retroactive** - scores are based on what actually happened, not intent
+- **Apolitical** - the same logic applies regardless of a journalist's political leaning
+- **Minimum-sample aware** - journalists need enough resolved claims before they are ranked
 
 A journalist can improve their score by:
 - Making accurate claims that get confirmed

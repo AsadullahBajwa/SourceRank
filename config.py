@@ -28,6 +28,11 @@ SCORE_WEIGHTS = {
     "spam_index": 0.10,
 }
 
+# Minimum evidence needed before a journalist should be ranked on the public
+# leaderboard. Scores are still computed for diagnostics, but the site marks
+# these rows as not rank-eligible.
+MIN_RESOLVED_CLAIMS_FOR_RANKING = 20
+
 # Verification windows in days by claim type
 VERIFICATION_WINDOWS = {
     "breaking": 7,
@@ -40,15 +45,17 @@ VERIFICATION_WINDOWS = {
 # Scraping window:
 # Skip tweets newer than this — too recent to verify claims
 SKIP_RECENT_DAYS = 30
+QUICK_SKIP_MIN_WORDS = 8  # tweets shorter than this skip LLM entirely
 # Go this many months back from the skip cutoff
-INITIAL_SCRAPE_MONTHS = 6  # scrapes from 30 days ago back to ~7 months ago
+INITIAL_SCRAPE_MONTHS = 18
 
-# --- X / Twitter API (optional — snscrape works without keys) ---
+# --- X / Twitter ---
 X_BEARER_TOKEN = os.environ.get("X_BEARER_TOKEN", "")
 
 # --- Ollama (local LLM for claim extraction) ---
 OLLAMA_HOST = "http://localhost:11434"
-OLLAMA_MODEL = "qwen2.5:14b"
+OLLAMA_MODEL = "qwen2.5:7b"
+OLLAMA_NUM_PARALLEL = 4
 
 # --- Google News ---
 GOOGLE_NEWS_LANG = "en"
