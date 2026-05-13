@@ -77,15 +77,68 @@ def get_claims_db(path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
+    migrate_claims_schema(conn)
+    backfill_tweet_created_at(conn)
     return conn
+
+
+def migrate_claims_schema(conn: sqlite3.Connection) -> None:
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(claims)").fetchall()}
+    migrations = {
+        "tweet_created_at": "ALTER TABLE claims ADD COLUMN tweet_created_at TEXT",
+        "confidence": "ALTER TABLE claims ADD COLUMN confidence REAL DEFAULT 0.5",
+    }
+    for col, ddl in migrations.items():
+        if col not in cols:
+            log.info(f"Adding missing claims column: {col}")
+            conn.execute(ddl)
+    conn.commit()
+
+
+def backfill_tweet_created_at(conn: sqlite3.Connection) -> None:
+    """Populate old claims with tweet timestamps from tweets.db when available."""
+    if not os.path.exists(config.TWEETS_DB):
+        return
+    missing = conn.execute(
+        "SELECT COUNT(*) FROM claims WHERE tweet_created_at IS NULL OR tweet_created_at = ''"
+    ).fetchone()[0]
+    if not missing:
+        return
+
+    conn.execute("ATTACH DATABASE ? AS tweets_db", (config.TWEETS_DB,))
+    try:
+        conn.execute(
+            """
+            UPDATE claims
+            SET tweet_created_at = (
+                SELECT t.created_at
+                FROM tweets_db.tweets t
+                WHERE t.id = claims.tweet_id
+            )
+            WHERE tweet_created_at IS NULL OR tweet_created_at = ''
+            """
+        )
+        conn.commit()
+        log.info(f"Backfilled tweet_created_at for up to {missing} old claims")
+    finally:
+        conn.execute("DETACH DATABASE tweets_db")
 
 
 def days_since(dt_str: str) -> int:
     try:
-        dt = datetime.datetime.fromisoformat(dt_str)
+        dt = datetime.datetime.fromisoformat(dt_str.replace("Z", "+00:00")).replace(tzinfo=None)
         return (datetime.datetime.utcnow() - dt).days
     except Exception:
         return 0
+
+
+def claim_reference_date(claim: sqlite3.Row) -> str:
+    """Prefer the original tweet timestamp; fall back for legacy rows."""
+    try:
+        tweet_created_at = claim["tweet_created_at"]
+    except (IndexError, KeyError):
+        tweet_created_at = ""
+    return tweet_created_at or claim["extracted_at"]
 
 
 def build_keyword_query(claim_text: str, entities: list[str]) -> str:
@@ -241,7 +294,7 @@ def check_contradictions(claim_text: str, articles: list[dict]) -> bool:
 def determine_verdict(claim: sqlite3.Row,
                       local_matches: list[dict],
                       google_matches: list[dict]) -> tuple[str, str, str]:
-    age_days = days_since(claim["extracted_at"])
+    age_days = days_since(claim_reference_date(claim))
     window   = claim["verification_window"]
     all_matches = local_matches + google_matches
 
@@ -289,7 +342,7 @@ def verify_claim(claim: sqlite3.Row, claims_conn: sqlite3.Connection,
                  use_google: bool = True, dry_run: bool = False) -> str:
     entities    = json.loads(claim["entities"] or "[]")
     claim_text  = claim["claim_text"]
-    tweet_date  = claim["extracted_at"]
+    tweet_date  = claim_reference_date(claim)
 
     # Step 1: local corpus
     local_matches = search_local_corpus(claim_text, entities, claims_conn)

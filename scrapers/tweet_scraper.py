@@ -15,6 +15,7 @@ Usage:
     python scrapers/tweet_scraper.py                   # scrape all journalists
     python scrapers/tweet_scraper.py --handle mkraju   # scrape one journalist
     python scrapers/tweet_scraper.py --months 3        # override lookback window
+    python scrapers/tweet_scraper.py --rescrape-complete  # ignore completed window log
     python scrapers/tweet_scraper.py --no-headless     # show browser window
 """
 
@@ -68,6 +69,19 @@ CREATE TABLE IF NOT EXISTS scrape_log (
 );
 """
 
+CREATE_SCRAPE_WINDOWS_TABLE = """
+CREATE TABLE IF NOT EXISTS scrape_windows (
+    handle       TEXT NOT NULL,
+    since_date   TEXT NOT NULL,
+    until_date   TEXT NOT NULL,
+    scraped_at   TEXT NOT NULL,
+    tweet_count  INTEGER DEFAULT 0,
+    status       TEXT DEFAULT 'ok',
+    error        TEXT,
+    PRIMARY KEY (handle, since_date, until_date)
+);
+"""
+
 
 def get_db(path: str) -> sqlite3.Connection:
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -75,6 +89,7 @@ def get_db(path: str) -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute(CREATE_TWEETS_TABLE)
     conn.execute(CREATE_SCRAPE_LOG_TABLE)
+    conn.execute(CREATE_SCRAPE_WINDOWS_TABLE)
     conn.commit()
     return conn
 
@@ -251,7 +266,7 @@ def cutoff_reached(tweet_date_str: str, cutoff: datetime.datetime) -> bool:
 
 
 def scrape_month(page, handle: str, since: str, until: str,
-                  conn: sqlite3.Connection, seen_ids: set) -> int:
+                  conn: sqlite3.Connection, seen_ids: set) -> tuple[int, str, str]:
     """Scrape one month window for a journalist using X search."""
     search_url = (
         f"https://x.com/search?q=from%3A{handle}%20since%3A{since}%20until%3A{until}"
@@ -270,11 +285,12 @@ def scrape_month(page, handle: str, since: str, until: str,
                 continue
             break
         except Exception as e:
-            log.warning(f"@{handle} [{since}→{until}]: failed — {e}")
-            return 0
+            log.warning(f"@{handle} [{since}->{until}]: failed - {e}")
+            return 0, "error", str(e)
     else:
-        log.error(f"@{handle} [{since}→{until}]: gave up after 3 attempts")
-        return 0
+        error = "gave up after 3 attempts"
+        log.error(f"@{handle} [{since}->{until}]: {error}")
+        return 0, "error", error
 
     scraped_at = datetime.datetime.utcnow().isoformat()
     new_count = 0
@@ -369,10 +385,43 @@ def scrape_month(page, handle: str, since: str, until: str,
         if no_new_streak >= 10:
             break
 
-    return new_count
+    return new_count, "ok", ""
 
 
-def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection) -> int:
+def window_completed(conn: sqlite3.Connection, handle: str, since: str, until: str) -> bool:
+    row = conn.execute(
+        """
+        SELECT status FROM scrape_windows
+        WHERE handle = ? AND since_date = ? AND until_date = ?
+        """,
+        (handle.lower(), since, until),
+    ).fetchone()
+    return bool(row and row[0] == "ok")
+
+
+def mark_window(conn: sqlite3.Connection, handle: str, since: str, until: str,
+                tweet_count: int, status: str, error: str = "") -> None:
+    conn.execute(
+        """
+        INSERT INTO scrape_windows
+            (handle, since_date, until_date, scraped_at, tweet_count, status, error)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(handle, since_date, until_date) DO UPDATE SET
+            scraped_at = excluded.scraped_at,
+            tweet_count = excluded.tweet_count,
+            status = excluded.status,
+            error = excluded.error
+        """,
+        (
+            handle.lower(), since, until, datetime.datetime.utcnow().isoformat(),
+            tweet_count, status, error,
+        ),
+    )
+    conn.commit()
+
+
+def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection,
+                   rescrape_complete: bool = False) -> int:
     """Scrape a journalist month by month to maximise tweet coverage."""
     now = datetime.datetime.utcnow()
     upper_cutoff = now - datetime.timedelta(days=config.SKIP_RECENT_DAYS)
@@ -393,8 +442,12 @@ def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection) -> 
     scraped_at = datetime.datetime.utcnow().isoformat()
 
     for since, until in windows:
-        log.info(f"  @{handle}: month {since} → {until}")
-        new = scrape_month(page, handle, since, until, conn, seen_ids)
+        if not rescrape_complete and window_completed(conn, handle, since, until):
+            log.info(f"  @{handle}: month {since} -> {until} already complete, skipping")
+            continue
+        log.info(f"  @{handle}: month {since} -> {until}")
+        new, status, error = scrape_month(page, handle, since, until, conn, seen_ids)
+        mark_window(conn, handle, since, until, new, status, error)
         total_new += new
         time.sleep(8 + (len(windows) % 3) * 2)  # 8-12s between months to avoid rate limiting
 
@@ -447,6 +500,8 @@ def main():
     parser = argparse.ArgumentParser(description="Scrape tweets using Playwright.")
     parser.add_argument("--handle", help="Scrape a single journalist by handle")
     parser.add_argument("--months", type=int, default=config.INITIAL_SCRAPE_MONTHS)
+    parser.add_argument("--rescrape-complete", action="store_true",
+                        help="Re-run windows already marked complete")
     parser.add_argument("--no-headless", action="store_true",
                         help="Show the browser window (useful for debugging)")
     args = parser.parse_args()
@@ -502,7 +557,10 @@ def main():
             if j.get("active", "true").lower() != "true":
                 continue
             try:
-                total += scrape_profile(page, j["handle"], args.months, conn)
+                total += scrape_profile(
+                    page, j["handle"], args.months, conn,
+                    rescrape_complete=args.rescrape_complete,
+                )
             except Exception as e:
                 log.error(f"@{j['handle']} failed: {e}")
                 continue

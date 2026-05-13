@@ -122,6 +122,7 @@
     .grade-C\\-            { background: #44403c; color: #fcd34d; }
     .grade-D               { background: #431407; color: #fb923c; }
     .grade-F               { background: #450a0a; color: #f87171; }
+    .grade-NR              { background: #1f2937; color: #94a3b8; }
 
     .accuracy { color: #86efac; }
     .claims-count { color: #94a3b8; font-size: 0.8rem; }
@@ -217,7 +218,10 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script>
-const scoreColor = s => s >= 75 ? '#22c55e' : s >= 55 ? '#facc15' : '#ef4444';
+const isEligible = j => j.eligible !== false;
+const scoreColor = j => !isEligible(j) ? '#64748b' : j.score >= 75 ? '#22c55e' : j.score >= 55 ? '#facc15' : '#ef4444';
+const scoreText = j => isEligible(j) ? j.score : 'N/R';
+const gradeText = j => isEligible(j) ? j.grade : 'N/R';
 
 function verdictBar(j) {
   const total = j.total_claims || 1;
@@ -256,15 +260,21 @@ fetch('data/scores.json')
     // Render rows
     const tbody = document.getElementById('tbody');
     journalists.forEach((j, i) => {
+      const grade = gradeText(j);
+      const rank = isEligible(j) ? i + 1 : 'N/R';
+      const minClaims = j.min_resolved_claims || 20;
+      const title = isEligible(j)
+        ? `Score: ${j.score}`
+        : `Needs ${minClaims} resolved claims to be ranked`;
       tbody.insertAdjacentHTML('beforeend', `
         <tr data-country="${j.country}" data-beat="${j.beat}">
-          <td class="rank">${i + 1}</td>
+          <td class="rank">${rank}</td>
           <td class="handle"><a href="https://x.com/${j.handle}" target="_blank">@${j.handle}</a></td>
           <td class="name">${j.name || j.handle}</td>
           <td class="beat">${j.beat || '—'}</td>
           <td class="country">${j.country || '—'}</td>
-          <td class="score-cell" style="color:${scoreColor(j.score)}">${j.score}</td>
-          <td><span class="grade grade-${j.grade.replace('+','\\+').replace('-','\\-')}">${j.grade}</span></td>
+          <td class="score-cell" data-order="${isEligible(j) ? j.score : -1}" title="${title}" style="color:${scoreColor(j)}">${scoreText(j)}</td>
+          <td><span class="grade grade-${grade.replace('+','\\+').replace('-','\\-').replace('/','')}">${grade}</span></td>
           <td class="accuracy">${j.accuracy_rate}%</td>
           <td class="claims-count">${j.total_claims}</td>
           <td>${verdictBar(j)}</td>

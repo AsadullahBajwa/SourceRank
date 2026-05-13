@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS claims (
     claim_text          TEXT NOT NULL,
     claim_type          TEXT NOT NULL,
     entities            TEXT,
+    tweet_created_at    TEXT,
     verification_window INTEGER NOT NULL,
     extracted_at        TEXT NOT NULL,
     verdict             TEXT DEFAULT 'PENDING',
@@ -58,6 +59,21 @@ CREATE TABLE IF NOT EXISTS processed_tweets (
     processed_at TEXT NOT NULL
 );
 """
+
+CLAIMS_SCHEMA_MIGRATIONS = {
+    "tweet_created_at": "ALTER TABLE claims ADD COLUMN tweet_created_at TEXT",
+    "confidence": "ALTER TABLE claims ADD COLUMN confidence REAL DEFAULT 0.5",
+}
+
+
+def migrate_claims_schema(conn: sqlite3.Connection) -> None:
+    """Bring existing claims.db files up to the current lightweight schema."""
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(claims)").fetchall()}
+    for col, ddl in CLAIMS_SCHEMA_MIGRATIONS.items():
+        if col not in cols:
+            log.info(f"Adding missing claims column: {col}")
+            conn.execute(ddl)
+    conn.commit()
 
 # Signals that suggest a tweet contains a checkable claim
 CLAIM_SIGNALS = [
@@ -211,6 +227,7 @@ def _get_thread_conn() -> sqlite3.Connection:
 
 def process_tweet(tweet: sqlite3.Row, conn: sqlite3.Connection | None, dry_run: bool = False) -> bool:
     tweet_id, handle, text = tweet["id"], tweet["handle"], tweet["text"]
+    tweet_created_at = tweet["created_at"]
 
     # Skip cheap/trivial tweets to avoid burning LLM time
     result = extract_fallback(text) if quick_skip(text) else (extract_with_ollama(text) or extract_fallback(text))
@@ -233,15 +250,16 @@ def process_tweet(tweet: sqlite3.Row, conn: sqlite3.Connection | None, dry_run: 
             "type": claim_type,
             "window_days": window,
             "entities": result.get("entities", []),
+            "tweet_created_at": tweet_created_at,
         }, indent=2))
         return True
 
     conn.execute(
         """
         INSERT OR IGNORE INTO claims
-            (id, tweet_id, handle, claim_text, claim_type, entities,
+            (id, tweet_id, handle, claim_text, claim_type, entities, tweet_created_at,
              verification_window, extracted_at, confidence)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             claim_id,
@@ -250,6 +268,7 @@ def process_tweet(tweet: sqlite3.Row, conn: sqlite3.Connection | None, dry_run: 
             result["claim_text"],
             claim_type,
             json.dumps(result.get("entities", [])),
+            tweet_created_at,
             window,
             extracted_at,
             result.get("confidence", 0.5),
@@ -273,7 +292,7 @@ def get_unprocessed_tweets(handle: str | None, tweets_conn: sqlite3.Connection,
         row[0] for row in claims_conn.execute("SELECT tweet_id FROM processed_tweets").fetchall()
     }
     tweets_conn.row_factory = sqlite3.Row
-    query = "SELECT id, handle, text FROM tweets WHERE is_retweet = 0"
+    query = "SELECT id, handle, text, created_at FROM tweets WHERE is_retweet = 0"
     params = []
     if handle:
         query += " AND handle = ?"
@@ -326,6 +345,7 @@ def get_db(path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute(CREATE_CLAIMS_TABLE)
+    migrate_claims_schema(conn)
     conn.execute(PROCESSED_FLAG_TABLE)
     conn.commit()
     return conn

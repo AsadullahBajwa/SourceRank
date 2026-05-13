@@ -1,15 +1,12 @@
-name: Weekly Pipeline
+name: Static validation
 
 on:
-  schedule:
-    - cron: "0 6 * * 1"   # every Monday at 06:00 UTC
-  workflow_dispatch:        # allow manual trigger from GitHub UI
-
-permissions:
-  contents: write
+  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  run-pipeline:
+  validate:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,27 +22,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Fetch news corpus
-        run: python scrapers/news_scraper.py
+      - name: Compile Python sources
+        run: python -m py_compile config.py scheduler.py save_session.py find_handles.py scrapers/*.py pipeline/*.py scripts/*.py
 
-      - name: Scrape tweets
-        env:
-          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
-        run: python scrapers/tweet_scraper.py
-
-      - name: Extract claims
-        run: python pipeline/claim_extractor.py
-
-      - name: Verify claims
-        run: python pipeline/verifier.py
-
-      - name: Score journalists
-        run: python pipeline/scorer.py
-
-      - name: Commit updated scores
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add output/site/data/scores.json
-          git diff --cached --quiet || git commit -m "update scores $(date -u '+%Y-%m-%d')"
-          git push
+      - name: Check static site artifact exists
+        run: test -f output/site/index.html
