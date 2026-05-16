@@ -19,6 +19,7 @@ import hashlib
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from time_utils import utc_now_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -64,6 +65,17 @@ CREATE TRIGGER IF NOT EXISTS articles_fts_delete AFTER DELETE ON articles BEGIN
 END;
 """
 
+CREATE_FEED_FETCH_LOG_TABLE = """
+CREATE TABLE IF NOT EXISTS feed_fetch_log (
+    source_name TEXT NOT NULL,
+    fetched_at  TEXT NOT NULL,
+    status      TEXT NOT NULL,
+    entry_count INTEGER DEFAULT 0,
+    new_count   INTEGER DEFAULT 0,
+    error       TEXT
+);
+"""
+
 
 def get_db(path: str) -> sqlite3.Connection:
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -73,6 +85,7 @@ def get_db(path: str) -> sqlite3.Connection:
     conn.execute(CREATE_FTS_TABLE)
     conn.execute(CREATE_FTS_TRIGGER_INSERT)
     conn.execute(CREATE_FTS_TRIGGER_DELETE)
+    conn.execute(CREATE_FEED_FETCH_LOG_TABLE)
     conn.commit()
     return conn
 
@@ -85,6 +98,19 @@ def article_id(url: str, title: str) -> str:
     return hashlib.md5(f"{url}{title}".encode()).hexdigest()
 
 
+def record_feed_fetch(conn: sqlite3.Connection, source_name: str, fetched_at: str,
+                      status: str, entry_count: int, new_count: int,
+                      error: str = "") -> None:
+    conn.execute(
+        """
+        INSERT INTO feed_fetch_log
+            (source_name, fetched_at, status, entry_count, new_count, error)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (source_name, fetched_at, status, entry_count, new_count, error),
+    )
+
+
 def fetch_feed(source: dict, conn: sqlite3.Connection) -> int:
     try:
         import feedparser
@@ -93,11 +119,19 @@ def fetch_feed(source: dict, conn: sqlite3.Connection) -> int:
         sys.exit(1)
 
     log.info(f"Fetching {source['name']} ...")
-    fetched_at = datetime.datetime.utcnow().isoformat()
+    fetched_at = utc_now_iso()
     new_count = 0
 
     try:
         feed = feedparser.parse(source["url"])
+        entry_count = len(feed.entries)
+        status = "ok"
+        error = ""
+        if getattr(feed, "bozo", False):
+            status = "warning"
+            error = str(getattr(feed, "bozo_exception", "feed parse warning"))
+            log.warning(f"{source['name']}: feed parse warning - {error}")
+
         for entry in feed.entries:
             title = getattr(entry, "title", "").strip()
             url = getattr(entry, "link", "").strip()
@@ -121,9 +155,13 @@ def fetch_feed(source: dict, conn: sqlite3.Connection) -> int:
                 new_count += 1
 
         conn.commit()
+        record_feed_fetch(conn, source["name"], fetched_at, status, entry_count, new_count, error)
+        conn.commit()
         log.info(f"{source['name']}: {new_count} new articles stored.")
 
     except Exception as e:
+        record_feed_fetch(conn, source["name"], fetched_at, "error", 0, 0, str(e))
+        conn.commit()
         log.error(f"{source['name']} failed: {e}")
 
     return new_count
@@ -156,8 +194,17 @@ def main():
     for source in sources:
         total += fetch_feed(source, conn)
 
+    recent_statuses = conn.execute(
+        """
+        SELECT status, COUNT(*)
+        FROM feed_fetch_log
+        WHERE fetched_at >= ?
+        GROUP BY status
+        """,
+        ((utc_now_iso()[:10]),),
+    ).fetchall()
     conn.close()
-    log.info(f"Done. Total new articles stored: {total}")
+    log.info(f"Done. Total new articles stored: {total} | statuses={dict(recent_statuses)}")
 
 
 if __name__ == "__main__":

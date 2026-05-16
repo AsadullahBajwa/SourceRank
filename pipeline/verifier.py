@@ -29,6 +29,7 @@ import feedparser
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from time_utils import parse_utc, utc_now, utc_now_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -126,8 +127,7 @@ def backfill_tweet_created_at(conn: sqlite3.Connection) -> None:
 
 def days_since(dt_str: str) -> int:
     try:
-        dt = datetime.datetime.fromisoformat(dt_str.replace("Z", "+00:00")).replace(tzinfo=None)
-        return (datetime.datetime.utcnow() - dt).days
+        return (utc_now() - parse_utc(dt_str)).days
     except Exception:
         return 0
 
@@ -187,7 +187,7 @@ def search_local_corpus(claim_text: str, entities: list[str],
     try:
         rows = conn.execute(
             """
-            SELECT a.source_name, a.title, a.url, a.published,
+            SELECT a.source_name, a.title, a.summary, a.url, a.published,
                    bm25(articles_fts) AS score
             FROM articles_fts
             JOIN articles a ON articles_fts.rowid = a.rowid
@@ -235,11 +235,9 @@ def search_google_news(claim_text: str, entities: list[str],
 
         # Parse tweet date for filtering
         try:
-            tweet_dt = datetime.datetime.fromisoformat(
-                tweet_date.replace("Z", "+00:00")
-            ).replace(tzinfo=None)
+            tweet_dt = parse_utc(tweet_date)
         except Exception:
-            tweet_dt = datetime.datetime.utcnow() - datetime.timedelta(days=365)
+            tweet_dt = utc_now() - datetime.timedelta(days=365)
 
         for entry in feed.entries[:10]:
             title = getattr(entry, "title", "")
@@ -250,7 +248,7 @@ def search_google_news(claim_text: str, entities: list[str],
             try:
                 pub_dt = datetime.datetime(*entry.published_parsed[:6])
             except Exception:
-                pub_dt = datetime.datetime.utcnow()
+                pub_dt = utc_now()
 
             # Only count articles published after the tweet was made
             if pub_dt < tweet_dt:
@@ -259,6 +257,7 @@ def search_google_news(claim_text: str, entities: list[str],
             results.append({
                 "source_name": "Google News",
                 "title": title,
+                "summary": getattr(entry, "summary", ""),
                 "url": link,
                 "published": pub,
                 "pub_dt": pub_dt,
@@ -275,16 +274,18 @@ def search_google_news(claim_text: str, entities: list[str],
 # Contradiction detection
 # ---------------------------------------------------------------------------
 
-def check_contradictions(claim_text: str, articles: list[dict]) -> bool:
-    """Return True if any article title contradicts the claim."""
+def find_contradiction(claim_text: str, articles: list[dict]) -> dict | None:
+    """Return the first article whose text directly contradicts the claim."""
     for claim_pat, refute_pat in CONTRADICTION_PAIRS:
         if not re.search(claim_pat, claim_text, re.IGNORECASE):
             continue
         for article in articles:
-            title = article.get("title", "")
-            if re.search(refute_pat, title, re.IGNORECASE):
-                return True
-    return False
+            article_text = " ".join(
+                part for part in (article.get("title", ""), article.get("summary", "")) if part
+            )
+            if re.search(refute_pat, article_text, re.IGNORECASE):
+                return article
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -309,11 +310,13 @@ def determine_verdict(claim: sqlite3.Row,
 
     # Contradiction check — REFUTED if tier-1 source confirms the contradiction,
     # UNVERIFIED if only lower-tier sources carry the refuting story.
-    if check_contradictions(claim["claim_text"], all_matches):
-        has_tier1 = any(a.get("source_name") in TIER1_SOURCES for a in all_matches)
-        if has_tier1:
-            return VERDICT_REFUTED, source, url
-        return VERDICT_UNVERIFIED, source, url
+    contradiction = find_contradiction(claim["claim_text"], all_matches)
+    if contradiction:
+        contradiction_source = contradiction.get("source_name", "")
+        contradiction_url = contradiction.get("url", "")
+        if contradiction_source in TIER1_SOURCES:
+            return VERDICT_REFUTED, contradiction_source, contradiction_url
+        return VERDICT_UNVERIFIED, contradiction_source, contradiction_url
 
     # Tier-1 source → CONFIRMED
     if source in TIER1_SOURCES and google_matches:
@@ -354,7 +357,7 @@ def verify_claim(claim: sqlite3.Row, claims_conn: sqlite3.Connection,
         time.sleep(GOOGLE_NEWS_DELAY)
 
     verdict, source, url = determine_verdict(claim, local_matches, google_matches)
-    verdict_at = datetime.datetime.utcnow().isoformat()
+    verdict_at = utc_now_iso()
 
     log.info(
         f"@{claim['handle']:20s}  "

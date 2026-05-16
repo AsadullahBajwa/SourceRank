@@ -31,6 +31,7 @@ import re
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from time_utils import parse_utc, utc_now, utc_now_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -248,7 +249,7 @@ def parse_tweet_date(time_el) -> str:
             return dt_str
     except Exception:
         pass
-    return datetime.datetime.utcnow().isoformat()
+    return utc_now_iso()
 
 
 def extract_tweet_id_from_url(url: str) -> str | None:
@@ -258,8 +259,7 @@ def extract_tweet_id_from_url(url: str) -> str | None:
 
 def cutoff_reached(tweet_date_str: str, cutoff: datetime.datetime) -> bool:
     try:
-        dt = datetime.datetime.fromisoformat(tweet_date_str.replace("Z", "+00:00"))
-        dt = dt.replace(tzinfo=None)
+        dt = parse_utc(tweet_date_str)
         return dt < cutoff
     except Exception:
         return False
@@ -292,7 +292,7 @@ def scrape_month(page, handle: str, since: str, until: str,
         log.error(f"@{handle} [{since}->{until}]: {error}")
         return 0, "error", error
 
-    scraped_at = datetime.datetime.utcnow().isoformat()
+    scraped_at = utc_now_iso()
     new_count = 0
     no_new_streak = 0
     scroll_attempts = 0
@@ -413,7 +413,7 @@ def mark_window(conn: sqlite3.Connection, handle: str, since: str, until: str,
             error = excluded.error
         """,
         (
-            handle.lower(), since, until, datetime.datetime.utcnow().isoformat(),
+            handle.lower(), since, until, utc_now_iso(),
             tweet_count, status, error,
         ),
     )
@@ -423,7 +423,7 @@ def mark_window(conn: sqlite3.Connection, handle: str, since: str, until: str,
 def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection,
                    rescrape_complete: bool = False) -> int:
     """Scrape a journalist month by month to maximise tweet coverage."""
-    now = datetime.datetime.utcnow()
+    now = utc_now()
     upper_cutoff = now - datetime.timedelta(days=config.SKIP_RECENT_DAYS)
     lower_cutoff = now - datetime.timedelta(days=months * 30)
 
@@ -439,7 +439,7 @@ def scrape_profile(page, handle: str, months: int, conn: sqlite3.Connection,
 
     seen_ids: set[str] = set()
     total_new = 0
-    scraped_at = datetime.datetime.utcnow().isoformat()
+    scraped_at = utc_now_iso()
 
     for since, until in windows:
         if not rescrape_complete and window_completed(conn, handle, since, until):

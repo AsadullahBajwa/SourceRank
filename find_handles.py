@@ -183,12 +183,21 @@ def zero_tweet_handles() -> set[str]:
     if not os.path.exists(config.TWEETS_DB):
         return set()
     conn = sqlite3.connect(config.TWEETS_DB)
-    rows = conn.execute("""
-        SELECT handle FROM scrape_log
-        WHERE tweet_count = 0 AND status = 'ok'
-        GROUP BY handle
-        HAVING MAX(scraped_at) = MAX(scraped_at)
-    """).fetchall()
+    rows = conn.execute(
+        """
+        SELECT latest.handle
+        FROM scrape_log latest
+        JOIN (
+            SELECT handle, MAX(scraped_at) AS max_scraped_at
+            FROM scrape_log
+            GROUP BY handle
+        ) most_recent
+          ON most_recent.handle = latest.handle
+         AND most_recent.max_scraped_at = latest.scraped_at
+        WHERE latest.tweet_count = 0
+          AND latest.status = 'ok'
+        """
+    ).fetchall()
     conn.close()
     return {r[0].lower() for r in rows}
 

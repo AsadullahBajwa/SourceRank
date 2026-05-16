@@ -19,6 +19,7 @@ import csv
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from time_utils import utc_now, utc_now_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -70,7 +71,7 @@ def compute_spam_index(handle: str, tweets_conn: sqlite3.Connection) -> float:
     Score based on tweet volume and deletion patterns.
     Returns a penalty-adjusted score between 0.0 (spammy) and 1.0 (clean).
     """
-    thirty_days_ago = (datetime.datetime.utcnow() - datetime.timedelta(days=30)).isoformat()
+    thirty_days_ago = (utc_now() - datetime.timedelta(days=30)).isoformat()
     row = tweets_conn.execute(
         "SELECT COUNT(*) FROM tweets WHERE handle = ? AND created_at > ? AND is_retweet = 0",
         (handle.lower(), thirty_days_ago),
@@ -150,7 +151,7 @@ def score_journalist(journalist: dict, claims: list[dict],
         "pending": sum(1 for c in claims if c["verdict"] == "PENDING"),
         "expired": sum(1 for c in claims if c["verdict"] == "EXPIRED"),
         "resolved_claims": len(resolved),
-        "scored_at": datetime.datetime.utcnow().isoformat(),
+        "scored_at": utc_now_iso(),
     }
 
 
@@ -210,7 +211,7 @@ def main():
     scores.sort(key=lambda x: (x["eligible"], x["score"]), reverse=True)
 
     output = {
-        "generated_at": datetime.datetime.utcnow().isoformat(),
+        "generated_at": utc_now_iso(),
         "journalists": scores,
     }
 

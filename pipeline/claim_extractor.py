@@ -23,6 +23,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from time_utils import utc_now_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -217,6 +218,7 @@ def extract_fallback(tweet_text: str) -> dict:
 # ---------------------------------------------------------------------------
 
 _thread_local = threading.local()
+_db_write_lock = threading.Lock()
 
 
 def _get_thread_conn() -> sqlite3.Connection:
@@ -234,13 +236,15 @@ def process_tweet(tweet: sqlite3.Row, conn: sqlite3.Connection | None, dry_run: 
 
     if not result.get("has_claim") or not result.get("claim_text", "").strip():
         if not dry_run:
-            mark_processed(tweet_id, conn)
+            with _db_write_lock:
+                mark_processed(tweet_id, conn)
+                conn.commit()
         return False
 
     claim_type = result.get("claim_type", "general")
     window = config.VERIFICATION_WINDOWS.get(claim_type, config.VERIFICATION_WINDOWS["general"])
     claim_id = f"{tweet_id}_{claim_type[:3]}_{int(time.time() * 1000) % 10000}"
-    extracted_at = datetime.datetime.utcnow().isoformat()
+    extracted_at = utc_now_iso()
 
     if dry_run:
         print(json.dumps({
@@ -254,35 +258,36 @@ def process_tweet(tweet: sqlite3.Row, conn: sqlite3.Connection | None, dry_run: 
         }, indent=2))
         return True
 
-    conn.execute(
-        """
-        INSERT OR IGNORE INTO claims
-            (id, tweet_id, handle, claim_text, claim_type, entities, tweet_created_at,
-             verification_window, extracted_at, confidence)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            claim_id,
-            tweet_id,
-            handle,
-            result["claim_text"],
-            claim_type,
-            json.dumps(result.get("entities", [])),
-            tweet_created_at,
-            window,
-            extracted_at,
-            result.get("confidence", 0.5),
-        ),
-    )
-    mark_processed(tweet_id, conn)
-    conn.commit()
+    with _db_write_lock:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO claims
+                (id, tweet_id, handle, claim_text, claim_type, entities, tweet_created_at,
+                 verification_window, extracted_at, confidence)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                claim_id,
+                tweet_id,
+                handle,
+                result["claim_text"],
+                claim_type,
+                json.dumps(result.get("entities", [])),
+                tweet_created_at,
+                window,
+                extracted_at,
+                result.get("confidence", 0.5),
+            ),
+        )
+        mark_processed(tweet_id, conn)
+        conn.commit()
     return True
 
 
 def mark_processed(tweet_id: str, conn: sqlite3.Connection):
     conn.execute(
         "INSERT OR IGNORE INTO processed_tweets (tweet_id, processed_at) VALUES (?, ?)",
-        (tweet_id, datetime.datetime.utcnow().isoformat()),
+        (tweet_id, utc_now_iso()),
     )
 
 
@@ -342,7 +347,7 @@ def main():
 
 def get_db(path: str) -> sqlite3.Connection:
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    conn = sqlite3.connect(path)
+    conn = sqlite3.connect(path, timeout=30)
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute(CREATE_CLAIMS_TABLE)
     migrate_claims_schema(conn)

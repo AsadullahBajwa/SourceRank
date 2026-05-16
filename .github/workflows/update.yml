@@ -25,5 +25,10 @@ jobs:
       - name: Compile Python sources
         run: python -m py_compile config.py scheduler.py save_session.py find_handles.py scrapers/*.py pipeline/*.py scripts/*.py
 
-      - name: Check static site artifact exists
-        run: test -f output/site/index.html
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check static site artifacts exist
+        run: |
+          test -f output/site/index.html
+          test -f output/site/data/scores.json
