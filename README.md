@@ -144,6 +144,8 @@ Scale the journalist registry to cover top 100 journalists per country:
 
 **Estimated monthly cost to run: $0**
 
+Because GitHub Actions cannot access the local X session or Ollama instance, leaderboard refreshes are generated locally. After a successful local run, commit the updated `output/site/data/scores.json` artifact so GitHub Pages serves the new leaderboard data.
+
 ---
 
 ## Scoring Methodology
