@@ -22,6 +22,7 @@ import sys
 import os
 import datetime
 import logging
+from time_utils import utc_now
 
 logging.basicConfig(
     level=logging.INFO,
@@ -60,7 +61,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Print steps without running")
     args = parser.parse_args()
 
-    start = datetime.datetime.utcnow()
+    start = utc_now()
     log.info(f"Pipeline started at {start.isoformat()}")
 
     steps = [args.step] if args.step else STEP_ORDER
@@ -71,7 +72,7 @@ def main():
             log.error(f"Pipeline aborted at step '{step}'.")
             sys.exit(1)
 
-    elapsed = (datetime.datetime.utcnow() - start).seconds
+    elapsed = (utc_now() - start).seconds
     log.info(f"Pipeline completed in {elapsed}s.")
 
 

@@ -19,6 +19,7 @@ import hashlib
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from time_utils import utc_now_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -93,7 +94,7 @@ def fetch_feed(source: dict, conn: sqlite3.Connection) -> int:
         sys.exit(1)
 
     log.info(f"Fetching {source['name']} ...")
-    fetched_at = datetime.datetime.utcnow().isoformat()
+    fetched_at = utc_now_iso()
     new_count = 0
 
     try:

@@ -23,6 +23,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from time_utils import utc_now_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -243,7 +244,7 @@ def process_tweet(tweet: sqlite3.Row, conn: sqlite3.Connection | None, dry_run: 
     claim_type = result.get("claim_type", "general")
     window = config.VERIFICATION_WINDOWS.get(claim_type, config.VERIFICATION_WINDOWS["general"])
     claim_id = f"{tweet_id}_{claim_type[:3]}_{int(time.time() * 1000) % 10000}"
-    extracted_at = datetime.datetime.utcnow().isoformat()
+    extracted_at = utc_now_iso()
 
     if dry_run:
         print(json.dumps({
@@ -286,7 +287,7 @@ def process_tweet(tweet: sqlite3.Row, conn: sqlite3.Connection | None, dry_run: 
 def mark_processed(tweet_id: str, conn: sqlite3.Connection):
     conn.execute(
         "INSERT OR IGNORE INTO processed_tweets (tweet_id, processed_at) VALUES (?, ?)",
-        (tweet_id, datetime.datetime.utcnow().isoformat()),
+        (tweet_id, utc_now_iso()),
     )
 
 

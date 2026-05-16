@@ -29,6 +29,7 @@ import feedparser
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from time_utils import parse_utc, utc_now, utc_now_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -126,8 +127,7 @@ def backfill_tweet_created_at(conn: sqlite3.Connection) -> None:
 
 def days_since(dt_str: str) -> int:
     try:
-        dt = datetime.datetime.fromisoformat(dt_str.replace("Z", "+00:00")).replace(tzinfo=None)
-        return (datetime.datetime.utcnow() - dt).days
+        return (utc_now() - parse_utc(dt_str)).days
     except Exception:
         return 0
 
@@ -235,11 +235,9 @@ def search_google_news(claim_text: str, entities: list[str],
 
         # Parse tweet date for filtering
         try:
-            tweet_dt = datetime.datetime.fromisoformat(
-                tweet_date.replace("Z", "+00:00")
-            ).replace(tzinfo=None)
+            tweet_dt = parse_utc(tweet_date)
         except Exception:
-            tweet_dt = datetime.datetime.utcnow() - datetime.timedelta(days=365)
+            tweet_dt = utc_now() - datetime.timedelta(days=365)
 
         for entry in feed.entries[:10]:
             title = getattr(entry, "title", "")
@@ -250,7 +248,7 @@ def search_google_news(claim_text: str, entities: list[str],
             try:
                 pub_dt = datetime.datetime(*entry.published_parsed[:6])
             except Exception:
-                pub_dt = datetime.datetime.utcnow()
+                pub_dt = utc_now()
 
             # Only count articles published after the tweet was made
             if pub_dt < tweet_dt:
@@ -354,7 +352,7 @@ def verify_claim(claim: sqlite3.Row, claims_conn: sqlite3.Connection,
         time.sleep(GOOGLE_NEWS_DELAY)
 
     verdict, source, url = determine_verdict(claim, local_matches, google_matches)
-    verdict_at = datetime.datetime.utcnow().isoformat()
+    verdict_at = utc_now_iso()
 
     log.info(
         f"@{claim['handle']:20s}  "

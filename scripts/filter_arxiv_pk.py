@@ -27,6 +27,7 @@ import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from time_utils import utc_now_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -216,7 +217,7 @@ def stream_csv(path: str, handles: set[str], conn: sqlite3.Connection | None,
                dry_run: bool, limit: int | None) -> tuple[int, int, int]:
     rows_scanned = matches = inserted = 0
     id_only_warned = False
-    scraped_at = datetime.datetime.utcnow().isoformat()
+    scraped_at = utc_now_iso()
 
     with open(path, newline="", encoding="utf-8", errors="replace") as f:
         reader = csv.DictReader(f)
@@ -259,7 +260,7 @@ def stream_jsonl(path: str, handles: set[str], conn: sqlite3.Connection | None,
                  dry_run: bool, limit: int | None) -> tuple[int, int, int]:
     rows_scanned = matches = inserted = 0
     id_only_warned = False
-    scraped_at = datetime.datetime.utcnow().isoformat()
+    scraped_at = utc_now_iso()
 
     with open(path, "r", encoding="utf-8", errors="replace") as f:
         for line in f:
