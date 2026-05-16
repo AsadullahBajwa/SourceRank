@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-16T03:08:20.503969",
+  "generated_at": "2026-05-16T03:20:32.586013",
   "journalists": [
     {
       "handle": "asmashirazi",
@@ -14,15 +14,15 @@
       "accuracy_rate": 100.0,
       "prediction_score": 100.0,
       "correction_score": 100.0,
-      "source_quality_score": 73.1,
+      "source_quality_score": 73.3,
       "spam_index_score": 100.0,
-      "total_claims": 32,
-      "confirmed": 26,
+      "total_claims": 37,
+      "confirmed": 30,
       "refuted": 0,
       "pending": 0,
-      "expired": 0,
-      "resolved_claims": 26,
-      "scored_at": "2026-05-16T03:08:20.331453"
+      "expired": 1,
+      "resolved_claims": 30,
+      "scored_at": "2026-05-16T03:20:32.411929"
     },
     {
       "handle": "aajkamrankhan",
@@ -37,22 +37,22 @@
       "accuracy_rate": 100.0,
       "prediction_score": 100.0,
       "correction_score": 100.0,
-      "source_quality_score": 53.1,
+      "source_quality_score": 52.8,
       "spam_index_score": 100.0,
-      "total_claims": 41,
-      "confirmed": 32,
+      "total_claims": 48,
+      "confirmed": 36,
       "refuted": 0,
       "pending": 0,
-      "expired": 0,
-      "resolved_claims": 32,
-      "scored_at": "2026-05-16T03:08:20.321451"
+      "expired": 3,
+      "resolved_claims": 36,
+      "scored_at": "2026-05-16T03:20:32.400929"
     },
     {
       "handle": "jonkarl",
       "name": "Jonathan Karl",
       "beat": "Politics",
       "country": "US",
-      "score": 95.0,
+      "score": 95.1,
       "grade": "A+",
       "eligible": true,
       "rank_status": "ranked",
@@ -60,21 +60,44 @@
       "accuracy_rate": 100.0,
       "prediction_score": 100.0,
       "correction_score": 100.0,
-      "source_quality_score": 50.0,
+      "source_quality_score": 51.3,
       "spam_index_score": 100.0,
-      "total_claims": 36,
-      "confirmed": 34,
+      "total_claims": 42,
+      "confirmed": 39,
       "refuted": 0,
       "pending": 0,
-      "expired": 0,
-      "resolved_claims": 34,
-      "scored_at": "2026-05-16T03:08:20.304362"
+      "expired": 1,
+      "resolved_claims": 39,
+      "scored_at": "2026-05-16T03:20:32.384417"
     },
     {
-      "handle": "mkraju",
-      "name": "Manu Raju",
+      "handle": "nadia_bilbassy",
+      "name": "Nadia Bilbassy",
       "beat": "Politics",
       "country": "US",
+      "score": 94.3,
+      "grade": "A+",
+      "eligible": true,
+      "rank_status": "ranked",
+      "min_resolved_claims": 20,
+      "accuracy_rate": 100.0,
+      "prediction_score": 100.0,
+      "correction_score": 100.0,
+      "source_quality_score": 42.6,
+      "spam_index_score": 100.0,
+      "total_claims": 98,
+      "confirmed": 47,
+      "refuted": 0,
+      "pending": 0,
+      "expired": 16,
+      "resolved_claims": 47,
+      "scored_at": "2026-05-16T03:20:32.395421"
+    },
+    {
+      "handle": "hamidmirpak",
+      "name": "Hamid Mir",
+      "beat": "Politics",
+      "country": "Pakistan",
       "score": 94.2,
       "grade": "A+",
       "eligible": true,
@@ -85,43 +108,20 @@
       "correction_score": 100.0,
       "source_quality_score": 41.9,
       "spam_index_score": 100.0,
-      "total_claims": 100,
-      "confirmed": 74,
+      "total_claims": 56,
+      "confirmed": 43,
       "refuted": 0,
       "pending": 0,
-      "expired": 0,
-      "resolved_claims": 74,
-      "scored_at": "2026-05-16T03:08:20.298358"
-    },
-    {
-      "handle": "hamidmirpak",
-      "name": "Hamid Mir",
-      "beat": "Politics",
-      "country": "Pakistan",
-      "score": 94.1,
-      "grade": "A+",
-      "eligible": true,
-      "rank_status": "ranked",
-      "min_resolved_claims": 20,
-      "accuracy_rate": 100.0,
-      "prediction_score": 100.0,
-      "correction_score": 100.0,
-      "source_quality_score": 41.0,
-      "spam_index_score": 100.0,
-      "total_claims": 50,
-      "confirmed": 39,
-      "refuted": 0,
-      "pending": 0,
-      "expired": 0,
-      "resolved_claims": 39,
-      "scored_at": "2026-05-16T03:08:20.318451"
+      "expired": 2,
+      "resolved_claims": 43,
+      "scored_at": "2026-05-16T03:20:32.398421"
     },
     {
       "handle": "razarumi",
       "name": "Raza Rumi",
       "beat": "Politics",
       "country": "Pakistan",
-      "score": 93.9,
+      "score": 94.2,
       "grade": "A+",
       "eligible": true,
       "rank_status": "ranked",
@@ -129,22 +129,45 @@
       "accuracy_rate": 100.0,
       "prediction_score": 100.0,
       "correction_score": 100.0,
-      "source_quality_score": 38.8,
+      "source_quality_score": 41.8,
       "spam_index_score": 100.0,
-      "total_claims": 69,
-      "confirmed": 49,
+      "total_claims": 77,
+      "confirmed": 55,
       "refuted": 0,
       "pending": 0,
-      "expired": 0,
-      "resolved_claims": 49,
-      "scored_at": "2026-05-16T03:08:20.326451"
+      "expired": 2,
+      "resolved_claims": 55,
+      "scored_at": "2026-05-16T03:20:32.406929"
+    },
+    {
+      "handle": "mkraju",
+      "name": "Manu Raju",
+      "beat": "Politics",
+      "country": "US",
+      "score": 93.8,
+      "grade": "A+",
+      "eligible": true,
+      "rank_status": "ranked",
+      "min_resolved_claims": 20,
+      "accuracy_rate": 100.0,
+      "prediction_score": 100.0,
+      "correction_score": 100.0,
+      "source_quality_score": 37.9,
+      "spam_index_score": 100.0,
+      "total_claims": 117,
+      "confirmed": 87,
+      "refuted": 0,
+      "pending": 0,
+      "expired": 4,
+      "resolved_claims": 87,
+      "scored_at": "2026-05-16T03:20:32.378417"
     },
     {
       "handle": "carolleonnig",
       "name": "Carol Leonnig",
       "beat": "Politics",
       "country": "US",
-      "score": 93.6,
+      "score": 93.4,
       "grade": "A+",
       "eligible": true,
       "rank_status": "ranked",
@@ -152,45 +175,45 @@
       "accuracy_rate": 100.0,
       "prediction_score": 100.0,
       "correction_score": 100.0,
-      "source_quality_score": 36.4,
+      "source_quality_score": 34.0,
       "spam_index_score": 100.0,
-      "total_claims": 47,
-      "confirmed": 33,
+      "total_claims": 73,
+      "confirmed": 50,
       "refuted": 0,
       "pending": 0,
-      "expired": 0,
-      "resolved_claims": 33,
-      "scored_at": "2026-05-16T03:08:20.307362"
-    },
-    {
-      "handle": "nadia_bilbassy",
-      "name": "Nadia Bilbassy",
-      "beat": "Politics",
-      "country": "US",
-      "score": 95.8,
-      "grade": "A+",
-      "eligible": false,
-      "rank_status": "insufficient_data",
-      "min_resolved_claims": 20,
-      "accuracy_rate": 100.0,
-      "prediction_score": 100.0,
-      "correction_score": 100.0,
-      "source_quality_score": 57.9,
-      "spam_index_score": 100.0,
-      "total_claims": 54,
-      "confirmed": 19,
-      "refuted": 0,
-      "pending": 0,
-      "expired": 0,
-      "resolved_claims": 19,
-      "scored_at": "2026-05-16T03:08:20.315454"
+      "expired": 9,
+      "resolved_claims": 50,
+      "scored_at": "2026-05-16T03:20:32.387421"
     },
     {
       "handle": "maggienyt",
       "name": "Maggie Haberman",
       "beat": "Politics",
       "country": "US",
-      "score": 95.0,
+      "score": 92.4,
+      "grade": "A+",
+      "eligible": true,
+      "rank_status": "ranked",
+      "min_resolved_claims": 20,
+      "accuracy_rate": 100.0,
+      "prediction_score": 100.0,
+      "correction_score": 100.0,
+      "source_quality_score": 23.8,
+      "spam_index_score": 100.0,
+      "total_claims": 28,
+      "confirmed": 21,
+      "refuted": 0,
+      "pending": 0,
+      "expired": 6,
+      "resolved_claims": 21,
+      "scored_at": "2026-05-16T03:20:32.381417"
+    },
+    {
+      "handle": "waseembadami",
+      "name": "Waseem Badami",
+      "beat": "General",
+      "country": "Pakistan",
+      "score": 100.0,
       "grade": "A+",
       "eligible": false,
       "rank_status": "insufficient_data",
@@ -198,22 +221,68 @@
       "accuracy_rate": 100.0,
       "prediction_score": 100.0,
       "correction_score": 100.0,
-      "source_quality_score": 50.0,
+      "source_quality_score": 100.0,
+      "spam_index_score": 100.0,
+      "total_claims": 5,
+      "confirmed": 3,
+      "refuted": 0,
+      "pending": 0,
+      "expired": 2,
+      "resolved_claims": 3,
+      "scored_at": "2026-05-16T03:20:32.419928"
+    },
+    {
+      "handle": "matiullahjan919",
+      "name": "Matiullah Jan",
+      "beat": "Politics",
+      "country": "Pakistan",
+      "score": 97.5,
+      "grade": "A+",
+      "eligible": false,
+      "rank_status": "insufficient_data",
+      "min_resolved_claims": 20,
+      "accuracy_rate": 100.0,
+      "prediction_score": 100.0,
+      "correction_score": 100.0,
+      "source_quality_score": 75.0,
       "spam_index_score": 100.0,
       "total_claims": 5,
       "confirmed": 4,
       "refuted": 0,
       "pending": 0,
-      "expired": 0,
+      "expired": 1,
       "resolved_claims": 4,
-      "scored_at": "2026-05-16T03:08:20.301362"
+      "scored_at": "2026-05-16T03:20:32.416929"
+    },
+    {
+      "handle": "talathussain12",
+      "name": "Talat Hussain",
+      "beat": "Politics",
+      "country": "Pakistan",
+      "score": 94.0,
+      "grade": "A+",
+      "eligible": false,
+      "rank_status": "insufficient_data",
+      "min_resolved_claims": 20,
+      "accuracy_rate": 100.0,
+      "prediction_score": 100.0,
+      "correction_score": 100.0,
+      "source_quality_score": 40.0,
+      "spam_index_score": 100.0,
+      "total_claims": 7,
+      "confirmed": 5,
+      "refuted": 0,
+      "pending": 0,
+      "expired": 2,
+      "resolved_claims": 5,
+      "scored_at": "2026-05-16T03:20:32.414928"
     },
     {
       "handle": "annielinskey",
       "name": "Annie Linskey",
       "beat": "Politics",
       "country": "US",
-      "score": 91.7,
+      "score": 91.4,
       "grade": "A+",
       "eligible": false,
       "rank_status": "insufficient_data",
@@ -221,22 +290,45 @@
       "accuracy_rate": 100.0,
       "prediction_score": 100.0,
       "correction_score": 100.0,
-      "source_quality_score": 16.7,
+      "source_quality_score": 14.3,
       "spam_index_score": 100.0,
-      "total_claims": 10,
-      "confirmed": 6,
+      "total_claims": 11,
+      "confirmed": 7,
       "refuted": 0,
       "pending": 0,
       "expired": 0,
-      "resolved_claims": 6,
-      "scored_at": "2026-05-16T03:08:20.312362"
+      "resolved_claims": 7,
+      "scored_at": "2026-05-16T03:20:32.392421"
+    },
+    {
+      "handle": "kendilaniannbc",
+      "name": "Ken Dilanian",
+      "beat": "Politics",
+      "country": "US",
+      "score": 90.0,
+      "grade": "A+",
+      "eligible": false,
+      "rank_status": "insufficient_data",
+      "min_resolved_claims": 20,
+      "accuracy_rate": 100.0,
+      "prediction_score": 100.0,
+      "correction_score": 100.0,
+      "source_quality_score": 0.0,
+      "spam_index_score": 100.0,
+      "total_claims": 1,
+      "confirmed": 1,
+      "refuted": 0,
+      "pending": 0,
+      "expired": 0,
+      "resolved_claims": 1,
+      "scored_at": "2026-05-16T03:20:32.375419"
     },
     {
       "handle": "mazharabbasgeo",
       "name": "Mazhar Abbas",
       "beat": "Politics",
       "country": "Pakistan",
-      "score": 81.8,
+      "score": 81.2,
       "grade": "A-",
       "eligible": false,
       "rank_status": "insufficient_data",
@@ -244,38 +336,15 @@
       "accuracy_rate": 100.0,
       "prediction_score": 50.0,
       "correction_score": 100.0,
-      "source_quality_score": 42.9,
+      "source_quality_score": 37.5,
       "spam_index_score": 100.0,
-      "total_claims": 10,
-      "confirmed": 7,
+      "total_claims": 11,
+      "confirmed": 8,
       "refuted": 0,
       "pending": 0,
       "expired": 0,
-      "resolved_claims": 7,
-      "scored_at": "2026-05-16T03:08:20.323451"
-    },
-    {
-      "handle": "kendilaniannbc",
-      "name": "Ken Dilanian",
-      "beat": "Politics",
-      "country": "US",
-      "score": 62.5,
-      "grade": "C+",
-      "eligible": false,
-      "rank_status": "insufficient_data",
-      "min_resolved_claims": 20,
-      "accuracy_rate": 50.0,
-      "prediction_score": 50.0,
-      "correction_score": 100.0,
-      "source_quality_score": 50.0,
-      "spam_index_score": 100.0,
-      "total_claims": 0,
-      "confirmed": 0,
-      "refuted": 0,
-      "pending": 0,
-      "expired": 0,
-      "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.295358"
+      "resolved_claims": 8,
+      "scored_at": "2026-05-16T03:20:32.403929"
     },
     {
       "handle": "philiprucker",
@@ -298,7 +367,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.309362"
+      "scored_at": "2026-05-16T03:20:32.390421"
     },
     {
       "handle": "gulbukharipak",
@@ -321,76 +390,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.329451"
-    },
-    {
-      "handle": "talathussain12",
-      "name": "Talat Hussain",
-      "beat": "Politics",
-      "country": "Pakistan",
-      "score": 62.5,
-      "grade": "C+",
-      "eligible": false,
-      "rank_status": "insufficient_data",
-      "min_resolved_claims": 20,
-      "accuracy_rate": 50.0,
-      "prediction_score": 50.0,
-      "correction_score": 100.0,
-      "source_quality_score": 50.0,
-      "spam_index_score": 100.0,
-      "total_claims": 0,
-      "confirmed": 0,
-      "refuted": 0,
-      "pending": 0,
-      "expired": 0,
-      "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.334451"
-    },
-    {
-      "handle": "matiullahjan919",
-      "name": "Matiullah Jan",
-      "beat": "Politics",
-      "country": "Pakistan",
-      "score": 62.5,
-      "grade": "C+",
-      "eligible": false,
-      "rank_status": "insufficient_data",
-      "min_resolved_claims": 20,
-      "accuracy_rate": 50.0,
-      "prediction_score": 50.0,
-      "correction_score": 100.0,
-      "source_quality_score": 50.0,
-      "spam_index_score": 100.0,
-      "total_claims": 0,
-      "confirmed": 0,
-      "refuted": 0,
-      "pending": 0,
-      "expired": 0,
-      "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.337451"
-    },
-    {
-      "handle": "waseembadami",
-      "name": "Waseem Badami",
-      "beat": "General",
-      "country": "Pakistan",
-      "score": 62.5,
-      "grade": "C+",
-      "eligible": false,
-      "rank_status": "insufficient_data",
-      "min_resolved_claims": 20,
-      "accuracy_rate": 50.0,
-      "prediction_score": 50.0,
-      "correction_score": 100.0,
-      "source_quality_score": 50.0,
-      "spam_index_score": 100.0,
-      "total_claims": 0,
-      "confirmed": 0,
-      "refuted": 0,
-      "pending": 0,
-      "expired": 0,
-      "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.339451"
+      "scored_at": "2026-05-16T03:20:32.408929"
     },
     {
       "handle": "bbcurdu",
@@ -413,7 +413,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.342451"
+      "scored_at": "2026-05-16T03:20:32.421929"
     },
     {
       "handle": "arifnizamipro",
@@ -436,7 +436,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.344451"
+      "scored_at": "2026-05-16T03:20:32.424929"
     },
     {
       "handle": "najamsethy",
@@ -459,7 +459,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.347453"
+      "scored_at": "2026-05-16T03:20:32.427928"
     },
     {
       "handle": "suhailwarraich",
@@ -482,7 +482,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.349451"
+      "scored_at": "2026-05-16T03:20:32.429928"
     },
     {
       "handle": "anchorsaleemsafi",
@@ -505,7 +505,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.352451"
+      "scored_at": "2026-05-16T03:20:32.432929"
     },
     {
       "handle": "absaralamoff",
@@ -528,7 +528,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.354451"
+      "scored_at": "2026-05-16T03:20:32.434929"
     },
     {
       "handle": "iqrarasimkhan",
@@ -551,7 +551,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.357452"
+      "scored_at": "2026-05-16T03:20:32.437930"
     },
     {
       "handle": "mohammedhanif",
@@ -574,7 +574,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.359451"
+      "scored_at": "2026-05-16T03:20:32.439928"
     },
     {
       "handle": "zahidhussain53",
@@ -597,7 +597,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.362451"
+      "scored_at": "2026-05-16T03:20:32.442929"
     },
     {
       "handle": "farrukhpitafi",
@@ -620,7 +620,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.365451"
+      "scored_at": "2026-05-16T03:20:32.444929"
     },
     {
       "handle": "fahdhusain",
@@ -643,7 +643,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.367451"
+      "scored_at": "2026-05-16T03:20:32.447929"
     },
     {
       "handle": "bashirmemon",
@@ -666,7 +666,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.370451"
+      "scored_at": "2026-05-16T03:20:32.450929"
     },
     {
       "handle": "mubashirlucman",
@@ -689,7 +689,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.372451"
+      "scored_at": "2026-05-16T03:20:32.452929"
     },
     {
       "handle": "asifbashirchaudhry",
@@ -712,7 +712,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.375451"
+      "scored_at": "2026-05-16T03:20:32.455929"
     },
     {
       "handle": "anjumrasheed1",
@@ -735,7 +735,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.377451"
+      "scored_at": "2026-05-16T03:20:32.457929"
     },
     {
       "handle": "marvisirmedpak",
@@ -758,7 +758,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.380451"
+      "scored_at": "2026-05-16T03:20:32.460928"
     },
     {
       "handle": "abbasshabbir",
@@ -781,7 +781,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.382451"
+      "scored_at": "2026-05-16T03:20:32.462929"
     },
     {
       "handle": "drshahidmasood",
@@ -804,7 +804,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.385451"
+      "scored_at": "2026-05-16T03:20:32.465929"
     },
     {
       "handle": "javedchaudhrycol",
@@ -827,7 +827,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.387451"
+      "scored_at": "2026-05-16T03:20:32.467929"
     },
     {
       "handle": "oryanmaqbool",
@@ -850,7 +850,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.390451"
+      "scored_at": "2026-05-16T03:20:32.470929"
     },
     {
       "handle": "saqibsheikh10",
@@ -873,7 +873,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.393451"
+      "scored_at": "2026-05-16T03:20:32.472929"
     },
     {
       "handle": "naziaahmad",
@@ -896,7 +896,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.395451"
+      "scored_at": "2026-05-16T03:20:32.475929"
     },
     {
       "handle": "mazhartufail",
@@ -919,7 +919,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.398451"
+      "scored_at": "2026-05-16T03:20:32.477929"
     },
     {
       "handle": "ahmednoorani1",
@@ -942,7 +942,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.400455"
+      "scored_at": "2026-05-16T03:20:32.480929"
     },
     {
       "handle": "wusatullah",
@@ -965,7 +965,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.403455"
+      "scored_at": "2026-05-16T03:20:32.483930"
     },
     {
       "handle": "rameezraza_off",
@@ -988,7 +988,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.405455"
+      "scored_at": "2026-05-16T03:20:32.487937"
     },
     {
       "handle": "moeed_pirzada",
@@ -1011,7 +1011,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.408455"
+      "scored_at": "2026-05-16T03:20:32.489935"
     },
     {
       "handle": "kaitlancollins",
@@ -1034,7 +1034,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.410455"
+      "scored_at": "2026-05-16T03:20:32.492935"
     },
     {
       "handle": "jimsciutto",
@@ -1057,7 +1057,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.413455"
+      "scored_at": "2026-05-16T03:20:32.495936"
     },
     {
       "handle": "peteralexander",
@@ -1080,7 +1080,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.415964"
+      "scored_at": "2026-05-16T03:20:32.497935"
     },
     {
       "handle": "aaronblake",
@@ -1103,7 +1103,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.417964"
+      "scored_at": "2026-05-16T03:20:32.501011"
     },
     {
       "handle": "jaketapper",
@@ -1126,7 +1126,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.420964"
+      "scored_at": "2026-05-16T03:20:32.504010"
     },
     {
       "handle": "brianstelter",
@@ -1149,7 +1149,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.423964"
+      "scored_at": "2026-05-16T03:20:32.507009"
     },
     {
       "handle": "glennthrush",
@@ -1172,7 +1172,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.425968"
+      "scored_at": "2026-05-16T03:20:32.509009"
     },
     {
       "handle": "zekejmiller",
@@ -1195,7 +1195,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.428964"
+      "scored_at": "2026-05-16T03:20:32.512009"
     },
     {
       "handle": "natashabertrand",
@@ -1218,7 +1218,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.430964"
+      "scored_at": "2026-05-16T03:20:32.514009"
     },
     {
       "handle": "kenvogel",
@@ -1241,7 +1241,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.433964"
+      "scored_at": "2026-05-16T03:20:32.517010"
     },
     {
       "handle": "alexburnsnyt",
@@ -1264,7 +1264,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.435964"
+      "scored_at": "2026-05-16T03:20:32.520009"
     },
     {
       "handle": "jenniferjjacobs",
@@ -1287,7 +1287,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.438964"
+      "scored_at": "2026-05-16T03:20:32.522009"
     },
     {
       "handle": "ryanobles",
@@ -1310,7 +1310,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.441966"
+      "scored_at": "2026-05-16T03:20:32.525009"
     },
     {
       "handle": "garretthaake",
@@ -1333,7 +1333,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.443964"
+      "scored_at": "2026-05-16T03:20:32.527009"
     },
     {
       "handle": "shaneharris",
@@ -1356,7 +1356,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.446964"
+      "scored_at": "2026-05-16T03:20:32.530009"
     },
     {
       "handle": "jonlemire",
@@ -1379,7 +1379,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.448964"
+      "scored_at": "2026-05-16T03:20:32.532011"
     },
     {
       "handle": "nickconfessore",
@@ -1402,7 +1402,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.451964"
+      "scored_at": "2026-05-16T03:20:32.535009"
     },
     {
       "handle": "scottmac50",
@@ -1425,7 +1425,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.453964"
+      "scored_at": "2026-05-16T03:20:32.537009"
     },
     {
       "handle": "gregpmiller",
@@ -1448,7 +1448,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.456965"
+      "scored_at": "2026-05-16T03:20:32.540009"
     },
     {
       "handle": "nakashimae",
@@ -1471,7 +1471,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.458964"
+      "scored_at": "2026-05-16T03:20:32.543009"
     },
     {
       "handle": "devlinbarrett",
@@ -1494,7 +1494,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.461964"
+      "scored_at": "2026-05-16T03:20:32.545009"
     },
     {
       "handle": "joshdawsey1",
@@ -1517,7 +1517,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.463964"
+      "scored_at": "2026-05-16T03:20:32.548010"
     },
     {
       "handle": "seungminkim",
@@ -1540,7 +1540,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.466964"
+      "scored_at": "2026-05-16T03:20:32.550010"
     },
     {
       "handle": "damianpaletta",
@@ -1563,7 +1563,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.469964"
+      "scored_at": "2026-05-16T03:20:32.553009"
     },
     {
       "handle": "yabutaleb7",
@@ -1586,7 +1586,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.471964"
+      "scored_at": "2026-05-16T03:20:32.555009"
     },
     {
       "handle": "colbyitkowitz",
@@ -1609,7 +1609,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.474964"
+      "scored_at": "2026-05-16T03:20:32.558010"
     },
     {
       "handle": "rachelbades",
@@ -1632,7 +1632,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.476965"
+      "scored_at": "2026-05-16T03:20:32.560009"
     },
     {
       "handle": "joshgerstein",
@@ -1655,7 +1655,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.479964"
+      "scored_at": "2026-05-16T03:20:32.563010"
     },
     {
       "handle": "laurarozen",
@@ -1678,7 +1678,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.481964"
+      "scored_at": "2026-05-16T03:20:32.565009"
     },
     {
       "handle": "jacobsoboroff",
@@ -1701,7 +1701,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.484964"
+      "scored_at": "2026-05-16T03:20:32.568009"
     },
     {
       "handle": "petewilliamsnbc",
@@ -1724,7 +1724,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.486964"
+      "scored_at": "2026-05-16T03:20:32.570009"
     },
     {
       "handle": "haleytalbotnbc",
@@ -1747,7 +1747,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.490966"
+      "scored_at": "2026-05-16T03:20:32.573010"
     },
     {
       "handle": "kasie",
@@ -1770,7 +1770,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.492964"
+      "scored_at": "2026-05-16T03:20:32.575009"
     },
     {
       "handle": "ejazhaider1",
@@ -1793,7 +1793,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.495964"
+      "scored_at": "2026-05-16T03:20:32.578009"
     },
     {
       "handle": "cyalmeida",
@@ -1816,7 +1816,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.498965"
+      "scored_at": "2026-05-16T03:20:32.580010"
     },
     {
       "handle": "chucktodd",
@@ -1839,7 +1839,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.500968"
+      "scored_at": "2026-05-16T03:20:32.583009"
     },
     {
       "handle": "kwelkernbc",
@@ -1862,7 +1862,7 @@
       "pending": 0,
       "expired": 0,
       "resolved_claims": 0,
-      "scored_at": "2026-05-16T03:08:20.503969"
+      "scored_at": "2026-05-16T03:20:32.585009"
     }
   ]
 }
