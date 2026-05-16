@@ -187,7 +187,7 @@ def search_local_corpus(claim_text: str, entities: list[str],
     try:
         rows = conn.execute(
             """
-            SELECT a.source_name, a.title, a.url, a.published,
+            SELECT a.source_name, a.title, a.summary, a.url, a.published,
                    bm25(articles_fts) AS score
             FROM articles_fts
             JOIN articles a ON articles_fts.rowid = a.rowid
@@ -257,6 +257,7 @@ def search_google_news(claim_text: str, entities: list[str],
             results.append({
                 "source_name": "Google News",
                 "title": title,
+                "summary": getattr(entry, "summary", ""),
                 "url": link,
                 "published": pub,
                 "pub_dt": pub_dt,
@@ -273,16 +274,18 @@ def search_google_news(claim_text: str, entities: list[str],
 # Contradiction detection
 # ---------------------------------------------------------------------------
 
-def check_contradictions(claim_text: str, articles: list[dict]) -> bool:
-    """Return True if any article title contradicts the claim."""
+def find_contradiction(claim_text: str, articles: list[dict]) -> dict | None:
+    """Return the first article whose text directly contradicts the claim."""
     for claim_pat, refute_pat in CONTRADICTION_PAIRS:
         if not re.search(claim_pat, claim_text, re.IGNORECASE):
             continue
         for article in articles:
-            title = article.get("title", "")
-            if re.search(refute_pat, title, re.IGNORECASE):
-                return True
-    return False
+            article_text = " ".join(
+                part for part in (article.get("title", ""), article.get("summary", "")) if part
+            )
+            if re.search(refute_pat, article_text, re.IGNORECASE):
+                return article
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -307,11 +310,13 @@ def determine_verdict(claim: sqlite3.Row,
 
     # Contradiction check — REFUTED if tier-1 source confirms the contradiction,
     # UNVERIFIED if only lower-tier sources carry the refuting story.
-    if check_contradictions(claim["claim_text"], all_matches):
-        has_tier1 = any(a.get("source_name") in TIER1_SOURCES for a in all_matches)
-        if has_tier1:
-            return VERDICT_REFUTED, source, url
-        return VERDICT_UNVERIFIED, source, url
+    contradiction = find_contradiction(claim["claim_text"], all_matches)
+    if contradiction:
+        contradiction_source = contradiction.get("source_name", "")
+        contradiction_url = contradiction.get("url", "")
+        if contradiction_source in TIER1_SOURCES:
+            return VERDICT_REFUTED, contradiction_source, contradiction_url
+        return VERDICT_UNVERIFIED, contradiction_source, contradiction_url
 
     # Tier-1 source → CONFIRMED
     if source in TIER1_SOURCES and google_matches:
