@@ -18,6 +18,7 @@ JOURNALISTS_CSV = os.path.join(DATA_DIR, "journalists.csv")
 RSS_SOURCES_CSV = os.path.join(DATA_DIR, "rss_sources.csv")
 
 OUTPUT_DIR = os.path.join(BASE_DIR, "output", "site", "data")
+HISTORY_DIR = os.path.join(OUTPUT_DIR, "history")
 
 # --- Scoring weights ---
 SCORE_WEIGHTS = {
