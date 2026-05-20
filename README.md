@@ -152,6 +152,9 @@ Because GitHub Actions cannot access the local X session or Ollama instance, lea
 # Check roster balance, duplicate people, and active handles with no local tweets
 python scripts/audit_registry.py
 
+# Check local DB and leaderboard health
+python scheduler.py --status
+
 # Run the regression suite
 python -m unittest discover -s tests -v
 
@@ -161,6 +164,8 @@ python scrapers/news_scraper.py
 # Refresh the public leaderboard artifact after local pipeline work
 python pipeline/scorer.py
 ```
+
+Scoring writes both the latest public artifact (`output/site/data/scores.json`) and a dated snapshot under `output/site/data/history/` for future trend views.
 
 ---
 
