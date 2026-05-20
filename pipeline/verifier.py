@@ -50,6 +50,14 @@ TIER1_SOURCES = {
 
 # Delay between Google News requests to avoid rate limiting
 GOOGLE_NEWS_DELAY = 3.0
+MIN_MATCHED_TERMS = 2
+
+STOPWORDS = {
+    "the", "a", "an", "is", "are", "was", "were", "will", "be",
+    "to", "of", "in", "on", "at", "by", "for", "with", "say",
+    "says", "said", "that", "this", "it", "he", "she", "they",
+    "have", "has", "had", "not", "but", "and", "or", "its",
+}
 
 # (claim_pattern, refutation_pattern) — if both match, the claim is contradicted.
 CONTRADICTION_PAIRS = [
@@ -143,17 +151,11 @@ def claim_reference_date(claim: sqlite3.Row) -> str:
 
 def build_keyword_query(claim_text: str, entities: list[str]) -> str:
     """Build a search query prioritising entity names then keywords."""
-    stopwords = {
-        "the", "a", "an", "is", "are", "was", "were", "will", "be",
-        "to", "of", "in", "on", "at", "by", "for", "with", "say",
-        "says", "said", "that", "this", "it", "he", "she", "they",
-        "have", "has", "had", "not", "but", "and", "or", "its",
-    }
     terms = [e.strip() for e in entities[:4] if e.strip()]
     words = [
         w.strip('.,!?"\'')
         for w in claim_text.split()
-        if w.lower().strip('.,!?"\'') not in stopwords and len(w) > 3
+        if w.lower().strip('.,!?"\'') not in STOPWORDS and len(w) > 3
     ]
     terms.extend(words[:6])
     # Deduplicate while preserving order
@@ -164,6 +166,43 @@ def build_keyword_query(claim_text: str, entities: list[str]) -> str:
             seen.add(t.lower())
             unique.append(t)
     return " ".join(unique[:8])
+
+
+def content_terms(text: str) -> set[str]:
+    return {
+        word.lower()
+        for word in re.findall(r"[A-Za-z0-9_'-]+", text)
+        if len(word) > 3 and word.lower() not in STOPWORDS
+    }
+
+
+def article_text(article: dict) -> str:
+    return " ".join(part for part in (article.get("title", ""), article.get("summary", "")) if part)
+
+
+def relevance_score(claim_text: str, article: dict) -> int:
+    article_terms = content_terms(article_text(article))
+    score = 0
+    for claim_term in content_terms(claim_text):
+        if any(
+            claim_term == article_term
+            or (len(claim_term) >= 5 and len(article_term) >= 5
+                and claim_term[:5] == article_term[:5])
+            for article_term in article_terms
+        ):
+            score += 1
+    return score
+
+
+def filter_relevant_articles(claim_text: str, articles: list[dict]) -> list[dict]:
+    claim_terms = content_terms(claim_text)
+    if not claim_terms:
+        return articles
+    threshold = min(MIN_MATCHED_TERMS, len(claim_terms))
+    return [
+        article for article in articles
+        if relevance_score(claim_text, article) >= threshold
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -177,10 +216,8 @@ def search_local_corpus(claim_text: str, entities: list[str],
         clean = e.strip().replace('"', "")
         if clean:
             query_terms.append(f'"{clean}"')
-    stopwords = {"the","a","an","is","are","was","were","will","be","to","of",
-                 "in","on","at","by","for","with","say","says","said","that","this"}
     words = [w.strip('.,!?"\'') for w in claim_text.split()
-             if w.lower().strip('.,!?"\'') not in stopwords and len(w) > 3]
+             if w.lower().strip('.,!?"\'') not in STOPWORDS and len(w) > 3]
     query_terms.extend(words[:6])
     fts_query = " OR ".join(query_terms) if query_terms else claim_text[:50]
 
@@ -348,12 +385,18 @@ def verify_claim(claim: sqlite3.Row, claims_conn: sqlite3.Connection,
     tweet_date  = claim_reference_date(claim)
 
     # Step 1: local corpus
-    local_matches = search_local_corpus(claim_text, entities, claims_conn)
+    local_matches = filter_relevant_articles(
+        claim_text,
+        search_local_corpus(claim_text, entities, claims_conn),
+    )
 
     # Step 2: Google News (if no strong local match)
     google_matches = []
     if use_google and len(local_matches) < 3:
-        google_matches = search_google_news(claim_text, entities, tweet_date)
+        google_matches = filter_relevant_articles(
+            claim_text,
+            search_google_news(claim_text, entities, tweet_date),
+        )
         time.sleep(GOOGLE_NEWS_DELAY)
 
     verdict, source, url = determine_verdict(claim, local_matches, google_matches)

@@ -187,6 +187,32 @@ def load_claims_for_handle(handle: str, conn: sqlite3.Connection) -> list[dict]:
     return [dict(zip(cols, row)) for row in rows]
 
 
+def write_score_outputs(output: dict) -> None:
+    os.makedirs(config.OUTPUT_DIR, exist_ok=True)
+    os.makedirs(config.HISTORY_DIR, exist_ok=True)
+
+    latest_path = os.path.join(config.OUTPUT_DIR, "scores.json")
+    with open(latest_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2)
+
+    snapshot_date = output["generated_at"][:10]
+    snapshot_name = f"scores_{snapshot_date}.json"
+    snapshot_path = os.path.join(config.HISTORY_DIR, snapshot_name)
+    with open(snapshot_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2)
+
+    snapshots = sorted(
+        name for name in os.listdir(config.HISTORY_DIR)
+        if name.startswith("scores_") and name.endswith(".json")
+    )
+    index = {
+        "latest": snapshot_name,
+        "snapshots": snapshots,
+    }
+    with open(os.path.join(config.HISTORY_DIR, "index.json"), "w", encoding="utf-8") as f:
+        json.dump(index, f, indent=2)
+
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -218,11 +244,8 @@ def main():
     if args.dry_run:
         print(json.dumps(output, indent=2))
     else:
-        os.makedirs(config.OUTPUT_DIR, exist_ok=True)
-        out_path = os.path.join(config.OUTPUT_DIR, "scores.json")
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(output, f, indent=2)
-        log.info(f"Scores written to {out_path}")
+        write_score_outputs(output)
+        log.info(f"Scores written to {os.path.join(config.OUTPUT_DIR, 'scores.json')}")
 
     claims_conn.close()
     tweets_conn.close()

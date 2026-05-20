@@ -22,6 +22,9 @@ import sys
 import os
 import datetime
 import logging
+import csv
+import json
+import sqlite3
 from time_utils import utc_now
 
 logging.basicConfig(
@@ -43,6 +46,68 @@ STEPS = {
 STEP_ORDER = ["news", "tweets", "extract", "verify", "score"]
 
 
+def _count_rows(db_path: str, query: str) -> int:
+    if not os.path.exists(db_path):
+        return 0
+    conn = sqlite3.connect(db_path)
+    try:
+        return int(conn.execute(query).fetchone()[0])
+    finally:
+        conn.close()
+
+
+def _group_counts(db_path: str, query: str) -> dict[str, int]:
+    if not os.path.exists(db_path):
+        return {}
+    conn = sqlite3.connect(db_path)
+    try:
+        return {str(key): int(count) for key, count in conn.execute(query).fetchall()}
+    finally:
+        conn.close()
+
+
+def pipeline_status() -> dict:
+    import config
+
+    active_journalists = 0
+    if os.path.exists(config.JOURNALISTS_CSV):
+        with open(config.JOURNALISTS_CSV, newline="", encoding="utf-8") as f:
+            active_journalists = sum(
+                1 for row in csv.DictReader(f)
+                if row.get("active", "true").lower() == "true"
+            )
+
+    original_tweets = _count_rows(config.TWEETS_DB, "SELECT COUNT(*) FROM tweets WHERE is_retweet = 0")
+    processed_tweets = _count_rows(config.CLAIMS_DB, "SELECT COUNT(*) FROM processed_tweets")
+    scores_path = os.path.join(config.OUTPUT_DIR, "scores.json")
+    ranked = tracked = 0
+    if os.path.exists(scores_path):
+        with open(scores_path, encoding="utf-8") as f:
+            scores = json.load(f).get("journalists", [])
+        tracked = len(scores)
+        ranked = sum(1 for row in scores if row.get("eligible"))
+
+    return {
+        "active_journalists": active_journalists,
+        "tweet_handles": _count_rows(config.TWEETS_DB, "SELECT COUNT(DISTINCT handle) FROM tweets"),
+        "original_tweets": original_tweets,
+        "processed_tweets": processed_tweets,
+        "unprocessed_tweets": max(original_tweets - processed_tweets, 0),
+        "claims": _count_rows(config.CLAIMS_DB, "SELECT COUNT(*) FROM claims"),
+        "verdicts": _group_counts(config.CLAIMS_DB, "SELECT verdict, COUNT(*) FROM claims GROUP BY verdict"),
+        "articles": _count_rows(config.CLAIMS_DB, "SELECT COUNT(*) FROM articles"),
+        "leaderboard_tracked": tracked,
+        "leaderboard_ranked": ranked,
+    }
+
+
+def print_status() -> None:
+    status = pipeline_status()
+    log.info("Pipeline status:")
+    for key, value in status.items():
+        log.info(f"  {key}: {value}")
+
+
 def run_step(name: str, cmd: list[str], dry_run: bool = False) -> bool:
     log.info(f"--- Step: {name.upper()} ---")
     if dry_run:
@@ -59,7 +124,12 @@ def main():
     parser = argparse.ArgumentParser(description="Run the SourceRank pipeline.")
     parser.add_argument("--step", choices=STEP_ORDER, help="Run a single step only")
     parser.add_argument("--dry-run", action="store_true", help="Print steps without running")
+    parser.add_argument("--status", action="store_true", help="Print local pipeline status and exit")
     args = parser.parse_args()
+
+    if args.status:
+        print_status()
+        return
 
     start = utc_now()
     log.info(f"Pipeline started at {start.isoformat()}")

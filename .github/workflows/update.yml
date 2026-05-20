@@ -32,3 +32,4 @@ jobs:
         run: |
           test -f output/site/index.html
           test -f output/site/data/scores.json
+          test -f output/site/data/history/index.json

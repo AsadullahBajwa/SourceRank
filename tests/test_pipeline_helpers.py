@@ -11,6 +11,7 @@ from pipeline.claim_extractor import quick_skip
 from pipeline.verifier import (
     VERDICT_REFUTED,
     determine_verdict,
+    filter_relevant_articles,
     find_contradiction,
 )
 from scripts.audit_registry import build_report
@@ -42,6 +43,17 @@ class VerifierTests(unittest.TestCase):
             }],
         )
         self.assertIsNotNone(contradiction)
+
+    def test_filter_relevant_articles_requires_claim_overlap(self):
+        matches = filter_relevant_articles(
+            "The cabinet minister will resign next week",
+            [
+                {"title": "Minister denies resignation rumors", "summary": ""},
+                {"title": "Sports schedule announced", "summary": "Local teams prepare for playoffs"},
+            ],
+        )
+        self.assertEqual(len(matches), 1)
+        self.assertIn("resignation", matches[0]["title"])
 
     def test_refuted_verdict_uses_refuting_article_source(self):
         claim = {
