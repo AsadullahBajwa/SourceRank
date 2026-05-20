@@ -235,15 +235,21 @@ function verdictBar(j) {
     </div>`;
 }
 
-fetch('data/scores.json')
-  .then(r => r.json())
-  .then(data => {
+Promise.all([
+  fetch('data/scores.json').then(r => r.json()),
+  fetch('data/history/index.json')
+    .then(r => r.ok ? r.json() : null)
+    .catch(() => null),
+])
+  .then(([data, history]) => {
     const journalists = data.journalists;
+    const ranked = journalists.filter(isEligible).length;
+    const snapshotCount = history?.snapshots?.length || 0;
     const genDate = new Date(data.generated_at).toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric'
     });
     document.getElementById('meta').textContent =
-      `Last updated: ${genDate} · ${journalists.length} journalists tracked`;
+      `Last updated: ${genDate} · ${journalists.length} tracked · ${ranked} ranked · ${snapshotCount} snapshots`;
 
     // Populate filters
     const countries = [...new Set(journalists.map(j => j.country).filter(Boolean))].sort();
