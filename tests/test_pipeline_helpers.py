@@ -13,6 +13,7 @@ from pipeline.verifier import (
     determine_verdict,
     filter_relevant_articles,
     find_contradiction,
+    parse_google_news_title,
 )
 from scripts.audit_registry import build_report
 from time_utils import parse_utc
@@ -30,8 +31,39 @@ class ClaimExtractorTests(unittest.TestCase):
     def test_quick_skip_rejects_short_non_claim(self):
         self.assertTrue(quick_skip("Good morning everyone"))
 
+    def test_quick_skip_keeps_statistical_claims(self):
+        self.assertFalse(
+            quick_skip("Official data shows inflation rose 5% last month in Pakistan")
+        )
+
 
 class VerifierTests(unittest.TestCase):
+    def test_parse_google_news_title_extracts_publisher(self):
+        title, source = parse_google_news_title("Minister denies resignation - Reuters")
+        self.assertEqual(title, "Minister denies resignation")
+        self.assertEqual(source, "Reuters")
+
+    def test_google_news_aggregator_is_not_tier1_source(self):
+        claim = {
+            "claim_text": "The minister will resign",
+            "verification_window": 7,
+            "tweet_created_at": "2026-05-15T00:00:00",
+            "extracted_at": "2026-05-15T00:00:00",
+        }
+        verdict, source, url = determine_verdict(
+            claim,
+            [],
+            [{
+                "source_name": "Google News",
+                "title": "Minister expected to resign",
+                "summary": "",
+                "url": "https://example.test/aggregate",
+            }],
+        )
+        self.assertNotEqual(verdict, "CONFIRMED")
+        self.assertEqual(source, "Google News")
+        self.assertEqual(url, "https://example.test/aggregate")
+
     def test_find_contradiction_uses_summary_text(self):
         contradiction = find_contradiction(
             "The minister will resign",

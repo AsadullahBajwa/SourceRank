@@ -45,7 +45,7 @@ VERDICT_EXPIRED    = "EXPIRED"
 TIER1_SOURCES = {
     "Reuters World", "Reuters Politics", "AP News Top",
     "BBC World", "BBC US", "Dawn Pakistan", "BBC Urdu",
-    "Guardian UK", "BBC UK", "Google News",
+    "Guardian UK", "BBC UK",
 }
 
 # Delay between Google News requests to avoid rate limiting
@@ -168,6 +168,14 @@ def build_keyword_query(claim_text: str, entities: list[str]) -> str:
     return " ".join(unique[:8])
 
 
+def parse_google_news_title(title: str) -> tuple[str, str]:
+    """Split Google News RSS titles into article title and publisher when present."""
+    if " - " not in title:
+        return title, "Google News"
+    article_title, source = title.rsplit(" - ", 1)
+    return article_title.strip() or title, source.strip() or "Google News"
+
+
 def content_terms(text: str) -> set[str]:
     return {
         word.lower()
@@ -277,7 +285,8 @@ def search_google_news(claim_text: str, entities: list[str],
             tweet_dt = utc_now() - datetime.timedelta(days=365)
 
         for entry in feed.entries[:10]:
-            title = getattr(entry, "title", "")
+            raw_title = getattr(entry, "title", "")
+            title, source_name = parse_google_news_title(raw_title)
             link  = getattr(entry, "link", "")
             pub   = getattr(entry, "published", "")
 
@@ -292,7 +301,7 @@ def search_google_news(claim_text: str, entities: list[str],
                 continue
 
             results.append({
-                "source_name": "Google News",
+                "source_name": source_name,
                 "title": title,
                 "summary": getattr(entry, "summary", ""),
                 "url": link,

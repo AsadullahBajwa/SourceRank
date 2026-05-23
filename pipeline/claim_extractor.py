@@ -91,6 +91,11 @@ CLAIM_SIGNALS = [
     r"\bplanning to\b",
     r"\baccording to\b",
     r"\bhas been (arrested|charged|indicted|fired|removed)\b",
+    r"\bdata (show|shows)\b",
+    r"\bofficial (data|figures|numbers)\b",
+    r"\breport (says|shows|finds)\b",
+    r"\b\d+(?:\.\d+)?%\b",
+    r"\b\d+(?:\.\d+)?\s*(million|billion|trillion)\b",
     r"\bFirst to report\b",
     r"\bJust in\b",
 ]
