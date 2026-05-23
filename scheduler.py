@@ -68,14 +68,18 @@ def _group_counts(db_path: str, query: str) -> dict[str, int]:
 
 def pipeline_status() -> dict:
     import config
+    from scripts.audit_registry import build_report, load_tweet_counts
 
+    journalist_rows = []
     active_journalists = 0
     if os.path.exists(config.JOURNALISTS_CSV):
         with open(config.JOURNALISTS_CSV, newline="", encoding="utf-8") as f:
-            active_journalists = sum(
-                1 for row in csv.DictReader(f)
-                if row.get("active", "true").lower() == "true"
-            )
+            journalist_rows = list(csv.DictReader(f))
+        active_journalists = sum(
+            1 for row in journalist_rows
+            if row.get("active", "true").lower() == "true"
+        )
+    registry = build_report(journalist_rows, load_tweet_counts()) if journalist_rows else {}
 
     original_tweets = _count_rows(config.TWEETS_DB, "SELECT COUNT(*) FROM tweets WHERE is_retweet = 0")
     processed_tweets = _count_rows(config.CLAIMS_DB, "SELECT COUNT(*) FROM processed_tweets")
@@ -89,6 +93,9 @@ def pipeline_status() -> dict:
 
     return {
         "active_journalists": active_journalists,
+        "registry_coverage_pct": registry.get("active_coverage_pct", 0.0),
+        "active_without_tweets": len(registry.get("active_without_tweets", [])),
+        "duplicate_names": len(registry.get("duplicate_names", {})),
         "tweet_handles": _count_rows(config.TWEETS_DB, "SELECT COUNT(DISTINCT handle) FROM tweets"),
         "original_tweets": original_tweets,
         "processed_tweets": processed_tweets,
@@ -101,8 +108,11 @@ def pipeline_status() -> dict:
     }
 
 
-def print_status() -> None:
+def print_status(as_json: bool = False) -> None:
     status = pipeline_status()
+    if as_json:
+        print(json.dumps(status, indent=2))
+        return
     log.info("Pipeline status:")
     for key, value in status.items():
         log.info(f"  {key}: {value}")
@@ -125,10 +135,14 @@ def main():
     parser.add_argument("--step", choices=STEP_ORDER, help="Run a single step only")
     parser.add_argument("--dry-run", action="store_true", help="Print steps without running")
     parser.add_argument("--status", action="store_true", help="Print local pipeline status and exit")
+    parser.add_argument("--json", action="store_true", help="Print --status output as JSON")
     args = parser.parse_args()
 
+    if args.json and not args.status:
+        parser.error("--json can only be used with --status")
+
     if args.status:
-        print_status()
+        print_status(as_json=args.json)
         return
 
     start = utc_now()

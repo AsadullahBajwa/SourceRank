@@ -155,6 +155,7 @@ python scripts/audit_registry.py --json
 
 # Check local DB and leaderboard health
 python scheduler.py --status
+python scheduler.py --status --json
 
 # Run the regression suite
 python -m unittest discover -s tests -v
