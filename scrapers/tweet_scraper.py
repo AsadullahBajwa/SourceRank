@@ -15,6 +15,7 @@ Usage:
     python scrapers/tweet_scraper.py                   # scrape all journalists
     python scrapers/tweet_scraper.py --handle mkraju   # scrape one journalist
     python scrapers/tweet_scraper.py --months 3        # override lookback window
+    python scrapers/tweet_scraper.py --only-missing    # scrape active handles with no local tweets
     python scrapers/tweet_scraper.py --rescrape-complete  # ignore completed window log
     python scrapers/tweet_scraper.py --no-headless     # show browser window
 """
@@ -469,6 +470,24 @@ def load_journalists(csv_path: str) -> list[dict]:
         return list(csv.DictReader(f))
 
 
+def select_journalists(journalists: list[dict], handle: str | None = None,
+                       only_missing: bool = False,
+                       tweet_counts: dict[str, int] | None = None) -> list[dict]:
+    selected = list(journalists)
+    if handle:
+        selected = [j for j in selected if j["handle"].lower() == handle.lower()]
+
+    if only_missing:
+        counts = tweet_counts or {}
+        selected = [
+            j for j in selected
+            if j.get("active", "true").lower() == "true"
+            and counts.get(j["handle"].lower(), 0) == 0
+        ]
+
+    return selected
+
+
 def load_credentials() -> tuple[str, str]:
     try:
         from dotenv import load_dotenv
@@ -500,6 +519,8 @@ def main():
     parser = argparse.ArgumentParser(description="Scrape tweets using Playwright.")
     parser.add_argument("--handle", help="Scrape a single journalist by handle")
     parser.add_argument("--months", type=int, default=config.INITIAL_SCRAPE_MONTHS)
+    parser.add_argument("--only-missing", action="store_true",
+                        help="Only scrape active journalists with no local tweets yet")
     parser.add_argument("--rescrape-complete", action="store_true",
                         help="Re-run windows already marked complete")
     parser.add_argument("--no-headless", action="store_true",
@@ -523,11 +544,19 @@ def main():
 
     journalists = load_journalists(config.JOURNALISTS_CSV)
 
-    if args.handle:
-        journalists = [j for j in journalists if j["handle"].lower() == args.handle.lower()]
-        if not journalists:
-            log.error(f"Handle '{args.handle}' not found in journalist registry.")
-            sys.exit(1)
+    journalists = select_journalists(journalists, handle=args.handle)
+    if args.handle and not journalists:
+        log.error(f"Handle '{args.handle}' not found in journalist registry.")
+        sys.exit(1)
+
+    if args.only_missing:
+        from scripts.audit_registry import load_tweet_counts
+        journalists = select_journalists(
+            journalists,
+            only_missing=True,
+            tweet_counts=load_tweet_counts(),
+        )
+        log.info(f"Targeting {len(journalists)} active handles with no local tweets.")
 
     conn = get_db(config.TWEETS_DB)
     total = 0

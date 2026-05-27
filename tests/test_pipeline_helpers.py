@@ -15,6 +15,7 @@ from pipeline.verifier import (
     find_contradiction,
     parse_google_news_title,
 )
+from scrapers.tweet_scraper import select_journalists
 from scripts.audit_registry import build_report
 from time_utils import parse_utc
 
@@ -161,6 +162,21 @@ class RegistryAuditTests(unittest.TestCase):
         self.assertNotIn("Alex Example", report["active_duplicate_names"])
         self.assertEqual(report["active_without_tweets_by_country"], {"Pakistan": 1})
         self.assertEqual(report["active_without_tweets"], ["beta"])
+
+
+class TweetScraperTests(unittest.TestCase):
+    def test_select_journalists_can_target_missing_active_handles(self):
+        rows = [
+            {"handle": "alpha", "active": "true"},
+            {"handle": "beta", "active": "true"},
+            {"handle": "gamma", "active": "false"},
+        ]
+        selected = select_journalists(
+            rows,
+            only_missing=True,
+            tweet_counts={"alpha": 4},
+        )
+        self.assertEqual([row["handle"] for row in selected], ["beta"])
 
 
 if __name__ == "__main__":
