@@ -36,9 +36,11 @@ def load_tweet_counts() -> dict[str, int]:
     return {handle.lower(): count for handle, count in rows}
 
 
-def duplicate_names(rows: list[dict]) -> dict[str, list[str]]:
+def duplicate_names(rows: list[dict], active_only: bool = False) -> dict[str, list[str]]:
     handles_by_name: dict[str, list[str]] = defaultdict(list)
     for row in rows:
+        if active_only and row.get("active", "true").lower() != "true":
+            continue
         handles_by_name[row["name"]].append(row["handle"])
     return {
         name: handles
@@ -67,6 +69,7 @@ def build_report(rows: list[dict], tweet_counts: dict[str, int]) -> dict:
         "inactive_by_country": dict(sorted(inactive_by_country.items())),
         "active_without_tweets_by_country": dict(sorted(active_without_by_country.items())),
         "duplicate_names": duplicate_names(rows),
+        "active_duplicate_names": duplicate_names(rows, active_only=True),
         "active_without_tweets": sorted(active_without_tweets, key=str.lower),
     }
 
@@ -80,7 +83,10 @@ def print_report(report: dict) -> None:
     print(f"Active by country : {report['active_by_country']}")
     print(f"Inactive by country: {report['inactive_by_country']}")
     print(f"Missing by country: {report['active_without_tweets_by_country']}")
-    print(f"Duplicate names   : {len(report['duplicate_names'])}")
+    print(f"Active duplicate names: {len(report['active_duplicate_names'])}")
+    for name, handles in sorted(report["active_duplicate_names"].items()):
+        print(f"  - {name}: {', '.join(handles)}")
+    print(f"All duplicate names   : {len(report['duplicate_names'])}")
     for name, handles in sorted(report["duplicate_names"].items()):
         print(f"  - {name}: {', '.join(handles)}")
     print(f"Active without tweets: {len(report['active_without_tweets'])}")
@@ -101,7 +107,7 @@ def main() -> None:
     else:
         print_report(report)
 
-    if args.strict and (report["duplicate_names"] or report["active_without_tweets"]):
+    if args.strict and (report["active_duplicate_names"] or report["active_without_tweets"]):
         raise SystemExit(1)
 
 

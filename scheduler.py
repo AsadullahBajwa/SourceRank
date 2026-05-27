@@ -95,6 +95,7 @@ def pipeline_status() -> dict:
         "active_journalists": active_journalists,
         "registry_coverage_pct": registry.get("active_coverage_pct", 0.0),
         "active_without_tweets": len(registry.get("active_without_tweets", [])),
+        "active_duplicate_names": len(registry.get("active_duplicate_names", {})),
         "duplicate_names": len(registry.get("duplicate_names", {})),
         "tweet_handles": _count_rows(config.TWEETS_DB, "SELECT COUNT(DISTINCT handle) FROM tweets"),
         "original_tweets": original_tweets,

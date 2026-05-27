@@ -149,7 +149,7 @@ Because GitHub Actions cannot access the local X session or Ollama instance, lea
 ### Local maintenance
 
 ```bash
-# Check roster balance, duplicate people, and active handles with no local tweets
+# Check roster balance, active duplicate people, and active handles with no local tweets
 python scripts/audit_registry.py
 python scripts/audit_registry.py --json
 

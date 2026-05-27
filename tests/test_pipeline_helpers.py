@@ -158,6 +158,7 @@ class RegistryAuditTests(unittest.TestCase):
         self.assertEqual(report["active_with_tweets"], 1)
         self.assertEqual(report["active_coverage_pct"], 50.0)
         self.assertIn("Alex Example", report["duplicate_names"])
+        self.assertNotIn("Alex Example", report["active_duplicate_names"])
         self.assertEqual(report["active_without_tweets_by_country"], {"Pakistan": 1})
         self.assertEqual(report["active_without_tweets"], ["beta"])
 
