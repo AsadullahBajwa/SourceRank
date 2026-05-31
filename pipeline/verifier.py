@@ -9,6 +9,7 @@ Assigns each claim a verdict: CONFIRMED / REFUTED / UNVERIFIED / EXPIRED.
 Usage:
     python pipeline/verifier.py                  # verify all pending claims
     python pipeline/verifier.py --handle mkraju  # one journalist
+    python pipeline/verifier.py --limit 100      # bounded batch
     python pipeline/verifier.py --dry-run        # print verdicts without saving
     python pipeline/verifier.py --no-google      # skip Google News (offline mode)
     python pipeline/verifier.py --recheck        # re-verify UNVERIFIED and EXPIRED claims
@@ -463,6 +464,7 @@ def main():
     parser = argparse.ArgumentParser(description="Verify claims against news corpus + Google News.")
     parser.add_argument("--handle",    help="Verify one journalist only")
     parser.add_argument("--dry-run",   action="store_true")
+    parser.add_argument("--limit", type=int, help="Maximum number of claims to verify")
     parser.add_argument("--no-google", action="store_true", help="Skip Google News (offline mode)")
     parser.add_argument("--recheck",   action="store_true",
                         help="Re-verify UNVERIFIED and EXPIRED claims in addition to PENDING")
@@ -470,6 +472,9 @@ def main():
 
     claims_conn = get_claims_db(config.CLAIMS_DB)
     claims      = get_pending_claims(args.handle, claims_conn, recheck=args.recheck)
+    if args.limit and args.limit > 0:
+        claims = claims[:args.limit]
+        log.info(f"Limiting verification run to {len(claims)} claim(s).")
 
     use_google = not args.no_google
     log.info(f"Verifying {len(claims)} claims | Google News: {'ON' if use_google else 'OFF'}"

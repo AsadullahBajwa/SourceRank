@@ -170,6 +170,9 @@ python scrapers/tweet_scraper.py --only-missing --limit 5
 # Process scraped tweets in bounded local LLM batches
 python pipeline/claim_extractor.py --limit 500
 
+# Verify claims in bounded batches, especially when Google News is enabled
+python pipeline/verifier.py --recheck --limit 100
+
 # Refresh the public leaderboard artifact after local pipeline work
 python pipeline/scorer.py
 ```
