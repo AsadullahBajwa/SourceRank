@@ -167,6 +167,9 @@ python scrapers/news_scraper.py
 python scrapers/tweet_scraper.py --only-missing
 python scrapers/tweet_scraper.py --only-missing --limit 5
 
+# Process scraped tweets in bounded local LLM batches
+python pipeline/claim_extractor.py --limit 500
+
 # Refresh the public leaderboard artifact after local pipeline work
 python pipeline/scorer.py
 ```

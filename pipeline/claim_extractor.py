@@ -6,6 +6,7 @@ Falls back to rule-based extraction if Ollama is unavailable.
 Usage:
     python pipeline/claim_extractor.py                  # process all unprocessed tweets
     python pipeline/claim_extractor.py --handle mkraju  # one journalist
+    python pipeline/claim_extractor.py --limit 500      # bounded batch
     python pipeline/claim_extractor.py --dry-run        # print output, don't save
 """
 
@@ -319,6 +320,7 @@ def main():
     parser = argparse.ArgumentParser(description="Extract claims from scraped tweets.")
     parser.add_argument("--handle", help="Process tweets for one journalist only")
     parser.add_argument("--dry-run", action="store_true", help="Print claims without saving")
+    parser.add_argument("--limit", type=int, help="Maximum number of unprocessed tweets to process")
     parser.add_argument("--workers", type=int, default=4, help="Parallel worker threads (default: 4)")
     parser.add_argument("--batch-size", type=int, default=500, help="Log progress every N tweets (default: 500)")
     args = parser.parse_args()
@@ -329,6 +331,9 @@ def main():
     tweets = get_unprocessed_tweets(args.handle, tweets_conn, claims_conn)
     tweets_conn.close()
     claims_conn.close()
+    if args.limit and args.limit > 0:
+        tweets = tweets[:args.limit]
+        log.info(f"Limiting extraction run to {len(tweets)} tweet(s).")
     log.info(f"Processing {len(tweets)} unprocessed tweets ...")
 
     total = len(tweets)
