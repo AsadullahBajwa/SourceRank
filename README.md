@@ -165,6 +165,7 @@ python scrapers/news_scraper.py
 
 # Backfill active journalists that still have no local tweets
 python scrapers/tweet_scraper.py --only-missing
+python scrapers/tweet_scraper.py --only-missing --limit 5
 
 # Refresh the public leaderboard artifact after local pipeline work
 python pipeline/scorer.py

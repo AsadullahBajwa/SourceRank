@@ -175,8 +175,18 @@ class TweetScraperTests(unittest.TestCase):
             rows,
             only_missing=True,
             tweet_counts={"alpha": 4},
+            limit=1,
         )
         self.assertEqual([row["handle"] for row in selected], ["beta"])
+
+    def test_select_journalists_applies_limit_after_filtering(self):
+        rows = [
+            {"handle": "alpha", "active": "true"},
+            {"handle": "beta", "active": "true"},
+            {"handle": "gamma", "active": "true"},
+        ]
+        selected = select_journalists(rows, limit=2)
+        self.assertEqual([row["handle"] for row in selected], ["alpha", "beta"])
 
 
 if __name__ == "__main__":

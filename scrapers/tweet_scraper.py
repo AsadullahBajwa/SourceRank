@@ -16,6 +16,7 @@ Usage:
     python scrapers/tweet_scraper.py --handle mkraju   # scrape one journalist
     python scrapers/tweet_scraper.py --months 3        # override lookback window
     python scrapers/tweet_scraper.py --only-missing    # scrape active handles with no local tweets
+    python scrapers/tweet_scraper.py --only-missing --limit 5
     python scrapers/tweet_scraper.py --rescrape-complete  # ignore completed window log
     python scrapers/tweet_scraper.py --no-headless     # show browser window
 """
@@ -472,7 +473,8 @@ def load_journalists(csv_path: str) -> list[dict]:
 
 def select_journalists(journalists: list[dict], handle: str | None = None,
                        only_missing: bool = False,
-                       tweet_counts: dict[str, int] | None = None) -> list[dict]:
+                       tweet_counts: dict[str, int] | None = None,
+                       limit: int | None = None) -> list[dict]:
     selected = list(journalists)
     if handle:
         selected = [j for j in selected if j["handle"].lower() == handle.lower()]
@@ -484,6 +486,9 @@ def select_journalists(journalists: list[dict], handle: str | None = None,
             if j.get("active", "true").lower() == "true"
             and counts.get(j["handle"].lower(), 0) == 0
         ]
+
+    if limit is not None and limit > 0:
+        selected = selected[:limit]
 
     return selected
 
@@ -521,6 +526,8 @@ def main():
     parser.add_argument("--months", type=int, default=config.INITIAL_SCRAPE_MONTHS)
     parser.add_argument("--only-missing", action="store_true",
                         help="Only scrape active journalists with no local tweets yet")
+    parser.add_argument("--limit", type=int,
+                        help="Maximum number of selected journalists to scrape this run")
     parser.add_argument("--rescrape-complete", action="store_true",
                         help="Re-run windows already marked complete")
     parser.add_argument("--no-headless", action="store_true",
@@ -555,8 +562,12 @@ def main():
             journalists,
             only_missing=True,
             tweet_counts=load_tweet_counts(),
+            limit=args.limit,
         )
         log.info(f"Targeting {len(journalists)} active handles with no local tweets.")
+    elif args.limit:
+        journalists = select_journalists(journalists, limit=args.limit)
+        log.info(f"Limiting run to {len(journalists)} selected journalist(s).")
 
     conn = get_db(config.TWEETS_DB)
     total = 0
