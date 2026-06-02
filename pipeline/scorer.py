@@ -98,7 +98,9 @@ def compute_source_quality(claims: list[dict]) -> float:
     Returns a 0.0-1.0 score.
     """
     tier1 = {"Reuters World", "Reuters Politics", "AP News Top", "BBC World",
-              "BBC US", "Dawn Pakistan", "BBC Urdu", "Guardian UK", "BBC UK"}
+              "BBC US", "Dawn Pakistan", "BBC Urdu", "Guardian UK", "BBC UK",
+              "Reuters", "Associated Press", "AP News", "BBC News",
+              "The Guardian", "Dawn"}
     confirmed = [c for c in claims if c["verdict"] == "CONFIRMED"]
     if not confirmed:
         return 0.5

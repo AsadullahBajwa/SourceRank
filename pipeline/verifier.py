@@ -47,6 +47,8 @@ TIER1_SOURCES = {
     "Reuters World", "Reuters Politics", "AP News Top",
     "BBC World", "BBC US", "Dawn Pakistan", "BBC Urdu",
     "Guardian UK", "BBC UK",
+    "Reuters", "Associated Press", "AP News", "BBC News",
+    "The Guardian", "Dawn",
 }
 
 # Delay between Google News requests to avoid rate limiting

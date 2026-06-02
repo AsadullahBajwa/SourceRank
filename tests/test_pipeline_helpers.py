@@ -65,6 +65,27 @@ class VerifierTests(unittest.TestCase):
         self.assertEqual(source, "Google News")
         self.assertEqual(url, "https://example.test/aggregate")
 
+    def test_parsed_reuters_google_result_is_tier1(self):
+        claim = {
+            "claim_text": "The minister will resign",
+            "verification_window": 7,
+            "tweet_created_at": "2026-06-01T00:00:00",
+            "extracted_at": "2026-06-01T00:00:00",
+        }
+        verdict, source, url = determine_verdict(
+            claim,
+            [],
+            [{
+                "source_name": "Reuters",
+                "title": "Minister expected to resign",
+                "summary": "",
+                "url": "https://example.test/reuters",
+            }],
+        )
+        self.assertEqual(verdict, "CONFIRMED")
+        self.assertEqual(source, "Reuters")
+        self.assertEqual(url, "https://example.test/reuters")
+
     def test_find_contradiction_uses_summary_text(self):
         contradiction = find_contradiction(
             "The minister will resign",
