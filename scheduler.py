@@ -13,6 +13,7 @@ Steps:
 Usage:
     python scheduler.py              # run full pipeline
     python scheduler.py --step news  # run one step only
+    python scheduler.py --from-step extract --through-step score
     python scheduler.py --dry-run    # print what would happen
 """
 
@@ -44,6 +45,18 @@ STEPS = {
 }
 
 STEP_ORDER = ["news", "tweets", "extract", "verify", "score"]
+
+
+def select_steps(step: str | None = None, from_step: str | None = None,
+                 through_step: str | None = None) -> list[str]:
+    if step:
+        return [step]
+
+    start = STEP_ORDER.index(from_step) if from_step else 0
+    end = STEP_ORDER.index(through_step) if through_step else len(STEP_ORDER) - 1
+    if start > end:
+        raise ValueError("--from-step must come before or equal --through-step")
+    return STEP_ORDER[start:end + 1]
 
 
 def _count_rows(db_path: str, query: str) -> int:
@@ -134,6 +147,8 @@ def run_step(name: str, cmd: list[str], dry_run: bool = False) -> bool:
 def main():
     parser = argparse.ArgumentParser(description="Run the SourceRank pipeline.")
     parser.add_argument("--step", choices=STEP_ORDER, help="Run a single step only")
+    parser.add_argument("--from-step", choices=STEP_ORDER, help="Run from this step through the end")
+    parser.add_argument("--through-step", choices=STEP_ORDER, help="Stop after this step")
     parser.add_argument("--dry-run", action="store_true", help="Print steps without running")
     parser.add_argument("--status", action="store_true", help="Print local pipeline status and exit")
     parser.add_argument("--json", action="store_true", help="Print --status output as JSON")
@@ -141,6 +156,8 @@ def main():
 
     if args.json and not args.status:
         parser.error("--json can only be used with --status")
+    if args.step and (args.from_step or args.through_step):
+        parser.error("--step cannot be combined with --from-step or --through-step")
 
     if args.status:
         print_status(as_json=args.json)
@@ -149,7 +166,10 @@ def main():
     start = utc_now()
     log.info(f"Pipeline started at {start.isoformat()}")
 
-    steps = [args.step] if args.step else STEP_ORDER
+    try:
+        steps = select_steps(args.step, args.from_step, args.through_step)
+    except ValueError as e:
+        parser.error(str(e))
 
     for step in steps:
         ok = run_step(step, STEPS[step], dry_run=args.dry_run)

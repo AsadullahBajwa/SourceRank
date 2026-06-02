@@ -17,6 +17,7 @@ from pipeline.verifier import (
 )
 from scrapers.news_scraper import select_sources
 from scrapers.tweet_scraper import select_journalists
+from scheduler import select_steps
 from scripts.audit_registry import build_report
 from time_utils import parse_utc
 
@@ -37,6 +38,18 @@ class ClaimExtractorTests(unittest.TestCase):
         self.assertFalse(
             quick_skip("Official data shows inflation rose 5% last month in Pakistan")
         )
+
+
+class SchedulerTests(unittest.TestCase):
+    def test_select_steps_can_choose_pipeline_range(self):
+        self.assertEqual(
+            select_steps(from_step="extract", through_step="score"),
+            ["extract", "verify", "score"],
+        )
+
+    def test_select_steps_rejects_reversed_range(self):
+        with self.assertRaises(ValueError):
+            select_steps(from_step="verify", through_step="tweets")
 
 
 class VerifierTests(unittest.TestCase):
