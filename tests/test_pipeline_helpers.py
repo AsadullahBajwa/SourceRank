@@ -15,6 +15,7 @@ from pipeline.verifier import (
     find_contradiction,
     parse_google_news_title,
 )
+from scrapers.news_scraper import select_sources
 from scrapers.tweet_scraper import select_journalists
 from scripts.audit_registry import build_report
 from time_utils import parse_utc
@@ -208,6 +209,17 @@ class TweetScraperTests(unittest.TestCase):
         ]
         selected = select_journalists(rows, limit=2)
         self.assertEqual([row["handle"] for row in selected], ["alpha", "beta"])
+
+
+class NewsScraperTests(unittest.TestCase):
+    def test_select_sources_filters_country_tier_and_limit(self):
+        sources = [
+            {"name": "Reuters", "country": "global", "tier": "1"},
+            {"name": "Dawn", "country": "Pakistan", "tier": "1"},
+            {"name": "Local", "country": "Pakistan", "tier": "2"},
+        ]
+        selected = select_sources(sources, country="Pakistan", tier=1, limit=1)
+        self.assertEqual([source["name"] for source in selected], ["Dawn"])
 
 
 if __name__ == "__main__":

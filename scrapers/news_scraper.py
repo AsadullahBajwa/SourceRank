@@ -6,6 +6,7 @@ Usage:
     python scrapers/news_scraper.py                   # fetch all sources
     python scrapers/news_scraper.py --country US      # one country only
     python scrapers/news_scraper.py --tier 1          # only tier-1 sources
+    python scrapers/news_scraper.py --tier 1 --limit 5 --dry-run
 """
 
 import sys
@@ -172,6 +173,18 @@ def load_sources(csv_path: str) -> list[dict]:
         return list(csv.DictReader(f))
 
 
+def select_sources(sources: list[dict], country: str | None = None,
+                   tier: int | None = None, limit: int | None = None) -> list[dict]:
+    selected = list(sources)
+    if country:
+        selected = [s for s in selected if s["country"].lower() == country.lower()]
+    if tier:
+        selected = [s for s in selected if int(s.get("tier", 99)) <= tier]
+    if limit is not None and limit > 0:
+        selected = selected[:limit]
+    return selected
+
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -180,16 +193,23 @@ def main():
     parser = argparse.ArgumentParser(description="Fetch RSS feeds into the news corpus.")
     parser.add_argument("--country", help="Filter by country code (e.g. US, Pakistan)")
     parser.add_argument("--tier", type=int, help="Filter by source tier (1 = top tier)")
+    parser.add_argument("--limit", type=int, help="Maximum number of selected sources to fetch")
+    parser.add_argument("--dry-run", action="store_true", help="Print selected sources without fetching")
     args = parser.parse_args()
 
+    sources = select_sources(
+        load_sources(config.RSS_SOURCES_CSV),
+        country=args.country,
+        tier=args.tier,
+        limit=args.limit,
+    )
+
+    if args.dry_run:
+        for source in sources:
+            log.info(f"[DRY RUN] Would fetch {source['name']} ({source['country']}, tier {source['tier']})")
+        return
+
     conn = get_db(config.CLAIMS_DB)
-    sources = load_sources(config.RSS_SOURCES_CSV)
-
-    if args.country:
-        sources = [s for s in sources if s["country"].lower() == args.country.lower()]
-    if args.tier:
-        sources = [s for s in sources if int(s.get("tier", 99)) <= args.tier]
-
     total = 0
     for source in sources:
         total += fetch_feed(source, conn)
