@@ -17,6 +17,7 @@ Usage:
     python scrapers/tweet_scraper.py --months 3        # override lookback window
     python scrapers/tweet_scraper.py --only-missing    # scrape active handles with no local tweets
     python scrapers/tweet_scraper.py --only-missing --limit 5
+    python scrapers/tweet_scraper.py --only-missing --list-selected
     python scrapers/tweet_scraper.py --rescrape-complete  # ignore completed window log
     python scrapers/tweet_scraper.py --no-headless     # show browser window
 """
@@ -528,26 +529,13 @@ def main():
                         help="Only scrape active journalists with no local tweets yet")
     parser.add_argument("--limit", type=int,
                         help="Maximum number of selected journalists to scrape this run")
+    parser.add_argument("--list-selected", action="store_true",
+                        help="Print selected handles and exit before launching Playwright")
     parser.add_argument("--rescrape-complete", action="store_true",
                         help="Re-run windows already marked complete")
     parser.add_argument("--no-headless", action="store_true",
                         help="Show the browser window (useful for debugging)")
     args = parser.parse_args()
-
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        log.error("Playwright not installed.\nRun: pip install playwright && playwright install chromium")
-        sys.exit(1)
-
-    session_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "session.json")
-    if not os.path.exists(session_path):
-        log.error(
-            "No saved session found.\n"
-            "Run this first to log in manually:\n"
-            "  python save_session.py"
-        )
-        sys.exit(1)
 
     journalists = load_journalists(config.JOURNALISTS_CSV)
 
@@ -568,6 +556,27 @@ def main():
     elif args.limit:
         journalists = select_journalists(journalists, limit=args.limit)
         log.info(f"Limiting run to {len(journalists)} selected journalist(s).")
+
+    if args.list_selected:
+        for journalist in journalists:
+            if journalist.get("active", "true").lower() == "true":
+                print(journalist["handle"])
+        return
+
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        log.error("Playwright not installed.\nRun: pip install playwright && playwright install chromium")
+        sys.exit(1)
+
+    session_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "session.json")
+    if not os.path.exists(session_path):
+        log.error(
+            "No saved session found.\n"
+            "Run this first to log in manually:\n"
+            "  python save_session.py"
+        )
+        sys.exit(1)
 
     conn = get_db(config.TWEETS_DB)
     total = 0
