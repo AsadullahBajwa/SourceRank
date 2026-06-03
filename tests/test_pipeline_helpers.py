@@ -17,7 +17,7 @@ from pipeline.verifier import (
 )
 from scrapers.news_scraper import select_sources
 from scrapers.tweet_scraper import select_journalists
-from scheduler import select_steps
+from scheduler import _history_status, select_steps
 from scripts.audit_registry import build_report
 from time_utils import parse_utc
 
@@ -59,6 +59,17 @@ class SchedulerTests(unittest.TestCase):
     def test_select_steps_rejects_reversed_range(self):
         with self.assertRaises(ValueError):
             select_steps(from_step="verify", through_step="tweets")
+
+    def test_history_status_reads_snapshot_index(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            open(os.path.join(tmpdir, "scores_2026-06-01.json"), "w").close()
+            with open(os.path.join(tmpdir, "index.json"), "w", encoding="utf-8") as f:
+                f.write('{"latest": "scores_2026-06-01.json"}')
+
+            status = _history_status(tmpdir)
+
+        self.assertEqual(status["history_snapshots"], 1)
+        self.assertEqual(status["latest_snapshot"], "scores_2026-06-01.json")
 
 
 class VerifierTests(unittest.TestCase):

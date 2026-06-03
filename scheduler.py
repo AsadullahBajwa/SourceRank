@@ -79,6 +79,25 @@ def _group_counts(db_path: str, query: str) -> dict[str, int]:
         conn.close()
 
 
+def _history_status(history_dir: str) -> dict[str, object]:
+    if not os.path.isdir(history_dir):
+        return {"history_snapshots": 0, "latest_snapshot": ""}
+
+    snapshots = sorted(
+        name for name in os.listdir(history_dir)
+        if name.startswith("scores_") and name.endswith(".json")
+    )
+    latest = snapshots[-1] if snapshots else ""
+    index_path = os.path.join(history_dir, "index.json")
+    if os.path.exists(index_path):
+        try:
+            with open(index_path, encoding="utf-8") as f:
+                latest = json.load(f).get("latest", latest)
+        except (OSError, json.JSONDecodeError):
+            pass
+    return {"history_snapshots": len(snapshots), "latest_snapshot": latest}
+
+
 def pipeline_status() -> dict:
     import config
     from scripts.audit_registry import build_report, load_tweet_counts
@@ -104,7 +123,7 @@ def pipeline_status() -> dict:
         tracked = len(scores)
         ranked = sum(1 for row in scores if row.get("eligible"))
 
-    return {
+    status = {
         "active_journalists": active_journalists,
         "registry_coverage_pct": registry.get("active_coverage_pct", 0.0),
         "active_without_tweets": len(registry.get("active_without_tweets", [])),
@@ -120,6 +139,8 @@ def pipeline_status() -> dict:
         "leaderboard_tracked": tracked,
         "leaderboard_ranked": ranked,
     }
+    status.update(_history_status(config.HISTORY_DIR))
+    return status
 
 
 def print_status(as_json: bool = False) -> None:
