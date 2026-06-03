@@ -109,6 +109,8 @@ CLAIM_TYPE_MAP = {
     "general": [],
 }
 
+VALID_CLAIM_TYPES = set(CLAIM_TYPE_MAP)
+
 
 def has_claim_signal(text: str) -> bool:
     for pattern in CLAIM_SIGNALS:
@@ -125,6 +127,19 @@ def infer_claim_type(text: str) -> str:
             if re.search(pattern, text, re.IGNORECASE):
                 return claim_type
     return "general"
+
+
+def normalize_claim_type(value: str | None) -> str:
+    claim_type = (value or "general").strip().lower()
+    return claim_type if claim_type in VALID_CLAIM_TYPES else "general"
+
+
+def normalize_confidence(value) -> float:
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        return 0.5
+    return max(0.0, min(confidence, 1.0))
 
 
 _EMOJI_RE = re.compile(
@@ -247,7 +262,7 @@ def process_tweet(tweet: sqlite3.Row, conn: sqlite3.Connection | None, dry_run: 
                 conn.commit()
         return False
 
-    claim_type = result.get("claim_type", "general")
+    claim_type = normalize_claim_type(result.get("claim_type"))
     window = config.VERIFICATION_WINDOWS.get(claim_type, config.VERIFICATION_WINDOWS["general"])
     claim_id = f"{tweet_id}_{claim_type[:3]}_{int(time.time() * 1000) % 10000}"
     extracted_at = utc_now_iso()
@@ -282,7 +297,7 @@ def process_tweet(tweet: sqlite3.Row, conn: sqlite3.Connection | None, dry_run: 
                 tweet_created_at,
                 window,
                 extracted_at,
-                result.get("confidence", 0.5),
+                normalize_confidence(result.get("confidence", 0.5)),
             ),
         )
         mark_processed(tweet_id, conn)

@@ -7,7 +7,7 @@ from unittest import mock
 
 import config
 from find_handles import zero_tweet_handles
-from pipeline.claim_extractor import quick_skip
+from pipeline.claim_extractor import normalize_claim_type, normalize_confidence, quick_skip
 from pipeline.verifier import (
     VERDICT_REFUTED,
     determine_verdict,
@@ -38,6 +38,15 @@ class ClaimExtractorTests(unittest.TestCase):
         self.assertFalse(
             quick_skip("Official data shows inflation rose 5% last month in Pakistan")
         )
+
+    def test_normalize_claim_type_defaults_unknown_values(self):
+        self.assertEqual(normalize_claim_type("Prediction"), "prediction")
+        self.assertEqual(normalize_claim_type("rumor"), "general")
+
+    def test_normalize_confidence_clamps_bad_values(self):
+        self.assertEqual(normalize_confidence("0.8"), 0.8)
+        self.assertEqual(normalize_confidence(9), 1.0)
+        self.assertEqual(normalize_confidence(None), 0.5)
 
 
 class SchedulerTests(unittest.TestCase):
