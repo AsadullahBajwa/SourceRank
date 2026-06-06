@@ -4,6 +4,7 @@ Summarize journalist roster quality and local tweet coverage.
 
 Usage:
     python scripts/audit_registry.py
+    python scripts/audit_registry.py --max-missing 10
     python scripts/audit_registry.py --strict
 """
 
@@ -74,7 +75,7 @@ def build_report(rows: list[dict], tweet_counts: dict[str, int]) -> dict:
     }
 
 
-def print_report(report: dict) -> None:
+def print_report(report: dict, max_missing: int | None = None) -> None:
     print(f"Total journalists : {report['total']}")
     print(f"Active journalists: {report['active']}")
     print(f"Inactive          : {report['inactive']}")
@@ -89,9 +90,13 @@ def print_report(report: dict) -> None:
     print(f"All duplicate names   : {len(report['duplicate_names'])}")
     for name, handles in sorted(report["duplicate_names"].items()):
         print(f"  - {name}: {', '.join(handles)}")
-    print(f"Active without tweets: {len(report['active_without_tweets'])}")
-    for handle in report["active_without_tweets"]:
+    missing = report["active_without_tweets"]
+    print(f"Active without tweets: {len(missing)}")
+    shown = missing[:max_missing] if max_missing and max_missing > 0 else missing
+    for handle in shown:
         print(f"  - @{handle}")
+    if len(shown) < len(missing):
+        print(f"  ... {len(missing) - len(shown)} more")
 
 
 def main() -> None:
@@ -99,13 +104,15 @@ def main() -> None:
     parser.add_argument("--strict", action="store_true",
                         help="Exit non-zero when duplicate names or uncovered active handles remain")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    parser.add_argument("--max-missing", type=int,
+                        help="Limit active-without-tweets rows in text output")
     args = parser.parse_args()
 
     report = build_report(load_rows(), load_tweet_counts())
     if args.json:
         print(json.dumps(report, indent=2))
     else:
-        print_report(report)
+        print_report(report, max_missing=args.max_missing)
 
     if args.strict and (report["active_duplicate_names"] or report["active_without_tweets"]):
         raise SystemExit(1)
