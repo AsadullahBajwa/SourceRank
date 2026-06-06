@@ -43,13 +43,7 @@ VERDICT_REFUTED    = "REFUTED"
 VERDICT_UNVERIFIED = "UNVERIFIED"
 VERDICT_EXPIRED    = "EXPIRED"
 
-TIER1_SOURCES = {
-    "Reuters World", "Reuters Politics", "AP News Top",
-    "BBC World", "BBC US", "Dawn Pakistan", "BBC Urdu",
-    "Guardian UK", "BBC UK",
-    "Reuters", "Associated Press", "AP News", "BBC News",
-    "The Guardian", "Dawn",
-}
+TIER1_SOURCES = config.TIER1_SOURCE_NAMES
 
 # Delay between Google News requests to avoid rate limiting
 GOOGLE_NEWS_DELAY = 3.0

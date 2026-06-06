@@ -97,14 +97,13 @@ def compute_source_quality(claims: list[dict]) -> float:
     Proxy: if claims are confirmed by tier-1 sources, source quality is higher.
     Returns a 0.0-1.0 score.
     """
-    tier1 = {"Reuters World", "Reuters Politics", "AP News Top", "BBC World",
-              "BBC US", "Dawn Pakistan", "BBC Urdu", "Guardian UK", "BBC UK",
-              "Reuters", "Associated Press", "AP News", "BBC News",
-              "The Guardian", "Dawn"}
     confirmed = [c for c in claims if c["verdict"] == "CONFIRMED"]
     if not confirmed:
         return 0.5
-    tier1_confirmed = sum(1 for c in confirmed if c.get("verdict_source", "") in tier1)
+    tier1_confirmed = sum(
+        1 for c in confirmed
+        if c.get("verdict_source", "") in config.TIER1_SOURCE_NAMES
+    )
     return tier1_confirmed / len(confirmed)
 
 

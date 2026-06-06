@@ -8,6 +8,7 @@ from unittest import mock
 import config
 from find_handles import zero_tweet_handles
 from pipeline.claim_extractor import normalize_claim_type, normalize_confidence, quick_skip
+from pipeline.scorer import compute_source_quality
 from pipeline.verifier import (
     VERDICT_REFUTED,
     determine_verdict,
@@ -47,6 +48,15 @@ class ClaimExtractorTests(unittest.TestCase):
         self.assertEqual(normalize_confidence("0.8"), 0.8)
         self.assertEqual(normalize_confidence(9), 1.0)
         self.assertEqual(normalize_confidence(None), 0.5)
+
+
+class ScorerTests(unittest.TestCase):
+    def test_source_quality_uses_configured_tier1_names(self):
+        claims = [
+            {"verdict": "CONFIRMED", "verdict_source": "Reuters"},
+            {"verdict": "CONFIRMED", "verdict_source": "Blog"},
+        ]
+        self.assertEqual(compute_source_quality(claims), 0.5)
 
 
 class SchedulerTests(unittest.TestCase):

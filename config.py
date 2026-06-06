@@ -34,6 +34,17 @@ SCORE_WEIGHTS = {
 # these rows as not rank-eligible.
 MIN_RESOLVED_CLAIMS_FOR_RANKING = 20
 
+# News publishers treated as highest-trust confirmation/refutation sources.
+# RSS source names and parsed Google News publisher names both live here so
+# verification and source-quality scoring stay aligned.
+TIER1_SOURCE_NAMES = {
+    "Reuters World", "Reuters Politics", "Reuters",
+    "AP News Top", "AP News", "Associated Press",
+    "BBC World", "BBC US", "BBC UK", "BBC Urdu", "BBC News",
+    "Dawn Pakistan", "Dawn",
+    "Guardian UK", "The Guardian",
+}
+
 # Verification windows in days by claim type
 VERIFICATION_WINDOWS = {
     "breaking": 7,
