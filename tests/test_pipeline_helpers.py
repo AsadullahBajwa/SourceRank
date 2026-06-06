@@ -8,7 +8,7 @@ from unittest import mock
 import config
 from find_handles import zero_tweet_handles
 from pipeline.claim_extractor import normalize_claim_type, normalize_confidence, quick_skip
-from pipeline.scorer import compute_source_quality
+from pipeline.scorer import compute_source_quality, score_journalist
 from pipeline.verifier import (
     VERDICT_REFUTED,
     determine_verdict,
@@ -57,6 +57,25 @@ class ScorerTests(unittest.TestCase):
             {"verdict": "CONFIRMED", "verdict_source": "Blog"},
         ]
         self.assertEqual(compute_source_quality(claims), 0.5)
+
+    def test_score_journalist_accepts_min_resolved_override(self):
+        conn = sqlite3.connect(":memory:")
+        conn.execute("""
+            CREATE TABLE tweets (
+                handle TEXT,
+                created_at TEXT,
+                is_retweet INTEGER
+            )
+        """)
+        score = score_journalist(
+            {"handle": "alpha", "name": "Alpha"},
+            [{"verdict": "CONFIRMED", "claim_type": "general", "verdict_source": "Reuters"}],
+            conn,
+            min_resolved_claims=1,
+        )
+        conn.close()
+        self.assertTrue(score["eligible"])
+        self.assertEqual(score["min_resolved_claims"], 1)
 
 
 class SchedulerTests(unittest.TestCase):

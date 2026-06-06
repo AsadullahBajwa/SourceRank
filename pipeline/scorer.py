@@ -6,6 +6,7 @@ Outputs scores.json for the frontend leaderboard.
 Usage:
     python pipeline/scorer.py           # score all journalists, write output
     python pipeline/scorer.py --dry-run # print scores without writing JSON
+    python pipeline/scorer.py --dry-run --min-resolved 5
 """
 
 import sys
@@ -108,7 +109,8 @@ def compute_source_quality(claims: list[dict]) -> float:
 
 
 def score_journalist(journalist: dict, claims: list[dict],
-                     tweets_conn: sqlite3.Connection) -> dict:
+                     tweets_conn: sqlite3.Connection,
+                     min_resolved_claims: int | None = None) -> dict:
     handle = journalist["handle"].lower()
     weights = config.SCORE_WEIGHTS
 
@@ -128,7 +130,11 @@ def score_journalist(journalist: dict, claims: list[dict],
 
     resolved = [c for c in claims if c["verdict"] in ("CONFIRMED", "REFUTED")]
     final_score = round(composite * 100, 1)
-    min_resolved = getattr(config, "MIN_RESOLVED_CLAIMS_FOR_RANKING", 20)
+    min_resolved = (
+        min_resolved_claims
+        if min_resolved_claims is not None
+        else getattr(config, "MIN_RESOLVED_CLAIMS_FOR_RANKING", 20)
+    )
     eligible = len(resolved) >= min_resolved
 
     return {
@@ -221,6 +227,8 @@ def write_score_outputs(output: dict) -> None:
 def main():
     parser = argparse.ArgumentParser(description="Score journalists and export leaderboard JSON.")
     parser.add_argument("--dry-run", action="store_true", help="Print scores without writing files")
+    parser.add_argument("--min-resolved", type=int,
+                        help="Override minimum resolved claims needed for rank eligibility")
     args = parser.parse_args()
 
     journalists = load_journalists(config.JOURNALISTS_CSV)
@@ -230,7 +238,12 @@ def main():
     scores = []
     for j in journalists:
         claims = load_claims_for_handle(j["handle"], claims_conn)
-        score = score_journalist(j, claims, tweets_conn)
+        score = score_journalist(
+            j,
+            claims,
+            tweets_conn,
+            min_resolved_claims=args.min_resolved,
+        )
         scores.append(score)
         log.info(f"@{j['handle']:30s}  score={score['score']:5.1f}  grade={score['grade']}  "
                  f"claims={score['total_claims']}  confirmed={score['confirmed']}")

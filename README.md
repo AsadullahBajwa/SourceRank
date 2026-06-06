@@ -180,6 +180,7 @@ python pipeline/verifier.py --recheck --limit 100
 
 # Refresh the public leaderboard artifact after local pipeline work
 python pipeline/scorer.py
+python pipeline/scorer.py --dry-run --min-resolved 5
 ```
 
 Scoring writes both the latest public artifact (`output/site/data/scores.json`) and a dated snapshot under `output/site/data/history/` for future trend views.
