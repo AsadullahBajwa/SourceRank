@@ -76,6 +76,75 @@ The scorer writes `output/site/data/scores.json` plus dated snapshots under `out
 
 ---
 
+## System Architecture
+
+```mermaid
+flowchart LR
+    subgraph Inputs
+        J["journalists.csv"]
+        R["rss_sources.csv"]
+        X["X search pages"]
+        G["Google News RSS"]
+    end
+
+    subgraph LocalRuntime["Local operator machine"]
+        S["scheduler.py"]
+        TS["tweet_scraper.py"]
+        NS["news_scraper.py"]
+        CE["claim_extractor.py"]
+        V["verifier.py"]
+        SC["scorer.py"]
+        O["Ollama qwen2.5:7b"]
+    end
+
+    subgraph Storage["SQLite storage"]
+        TDB["tweets.db"]
+        CDB["claims.db"]
+        FTS["articles_fts"]
+    end
+
+    subgraph Publish["Static publishing"]
+        JSON["scores.json"]
+        HIST["history snapshots"]
+        SITE["GitHub Pages site"]
+    end
+
+    J --> S
+    R --> NS
+    X --> TS
+    G --> V
+    S --> TS
+    S --> NS
+    S --> CE
+    S --> V
+    S --> SC
+    TS --> TDB
+    NS --> CDB
+    CDB --> FTS
+    TDB --> CE
+    CE --> O
+    CE --> CDB
+    FTS --> V
+    V --> CDB
+    CDB --> SC
+    TDB --> SC
+    SC --> JSON
+    SC --> HIST
+    JSON --> SITE
+```
+
+### Architectural Decisions
+
+| Decision | Reason |
+|---|---|
+| Local Playwright scraping instead of X API | Keeps cost at zero and avoids paid API limits |
+| SQLite instead of hosted database | Portable, auditable, simple backup story |
+| Ollama instead of hosted LLM API | Local inference, no recurring model cost |
+| FTS5 article index | Fast enough for local claim matching without external search infra |
+| Static JSON publishing | GitHub Pages can serve the leaderboard without a backend |
+
+---
+
 ## Project Structure
 
 ```text
