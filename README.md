@@ -400,6 +400,63 @@ python pipeline/scorer.py --dry-run --min-resolved 5
 
 ---
 
+## Operations and Deployment
+
+```mermaid
+flowchart TD
+    A["Local machine"] --> B["Windows Task Scheduler"]
+    B --> C["scheduler.py"]
+    C --> D["Refresh local SQLite databases"]
+    D --> E["Generate scores.json"]
+    E --> F["Generate dated score snapshot"]
+    F --> G["Commit public data artifacts"]
+    G --> H["Push to GitHub main"]
+    H --> I["GitHub Pages serves static site"]
+
+    J["GitHub Actions"] --> K["Validate code and static site"]
+    H --> J
+```
+
+```mermaid
+sequenceDiagram
+    participant Operator
+    participant Scheduler
+    participant Scrapers
+    participant Pipeline
+    participant SQLite
+    participant Site
+
+    Operator->>Scheduler: Run weekly refresh
+    Scheduler->>Scrapers: Fetch RSS and scrape tweets
+    Scrapers->>SQLite: Store tweets and articles
+    Scheduler->>Pipeline: Extract, verify, score
+    Pipeline->>SQLite: Read claims and write verdicts
+    Pipeline->>Site: Write scores.json and history snapshot
+    Operator->>Site: Commit and push artifacts
+```
+
+### Operating Constraints
+
+| Constraint | Implementation response |
+|---|---|
+| No paid APIs | RSS, Google News RSS, local browser scraping |
+| No cloud inference | Ollama runs on the operator machine |
+| X API unavailable | Playwright uses a saved session and search URLs |
+| GitHub Actions cannot access local secrets | CI validates; local machine refreshes data |
+| Long-running jobs | `--limit`, `--only-missing`, `--from-step`, `--through-step` controls |
+| Small current dataset | Registry audit and targeted backfill commands expose coverage gaps |
+
+## Portfolio Talking Points
+
+- **Local-first architecture:** the system keeps scraping state, LLM inference, and SQLite databases on the operator machine.
+- **Cost discipline:** every component was selected to avoid recurring API or hosting costs.
+- **Auditable scoring:** weights, ranking thresholds, source tiers, and verdict rules live in code.
+- **Resumable operations:** scrape windows, processed tweet flags, bounded extraction, and bounded verification reduce rerun risk.
+- **Static publishing:** the frontend needs only JSON artifacts, so GitHub Pages is enough for deployment.
+- **Evidence pipeline:** each score can be traced back from leaderboard row to claim, verdict, source, and original tweet.
+
+---
+
 ## Scoring Methodology
 
 | Dimension | Description | Weight |
