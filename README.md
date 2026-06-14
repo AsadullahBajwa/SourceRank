@@ -145,6 +145,74 @@ flowchart LR
 
 ---
 
+## Pipeline Flow
+
+```mermaid
+flowchart TD
+    A["Start scheduled run"] --> B["Fetch RSS articles"]
+    B --> C["Update article corpus and FTS index"]
+    C --> D["Scrape tweet windows"]
+    D --> E["Store original tweets"]
+    E --> F["Quick-skip obvious non-claims"]
+    F --> G{"Needs LLM?"}
+    G -- "yes" --> H["Extract claim with Ollama"]
+    G -- "no" --> I["Rule fallback"]
+    H --> J["Normalize claim type and confidence"]
+    I --> J
+    J --> K["Store claim and mark tweet processed"]
+    K --> L["Search local article corpus"]
+    L --> M{"Enough relevant matches?"}
+    M -- "no" --> N["Search Google News RSS"]
+    M -- "yes" --> O["Determine verdict"]
+    N --> O
+    O --> P["Write verdict"]
+    P --> Q["Compute journalist scores"]
+    Q --> R["Write scores.json and snapshot"]
+```
+
+## Verification Decision Flow
+
+```mermaid
+flowchart TD
+    A["Claim"] --> B["Build keyword query"]
+    B --> C["Search local FTS articles"]
+    C --> D["Filter weak article matches"]
+    D --> E{"Relevant matches found?"}
+    E -- "no" --> F["Optional Google News RSS search"]
+    E -- "yes" --> G["Merge evidence"]
+    F --> G
+    G --> H{"Direct contradiction from tier-one source?"}
+    H -- "yes" --> I["REFUTED"]
+    H -- "no" --> J{"Tier-one confirmation?"}
+    J -- "yes" --> K["CONFIRMED"]
+    J -- "no" --> L{"3+ corroborating sources?"}
+    L -- "yes" --> K
+    L -- "no" --> M{"Verification window expired?"}
+    M -- "yes" --> N["EXPIRED"]
+    M -- "no" --> O["UNVERIFIED"]
+```
+
+## Scoring Flow
+
+```mermaid
+flowchart LR
+    A["Claims by journalist"] --> B["Accuracy rate"]
+    A --> C["Prediction score"]
+    A --> D["Correction behavior"]
+    A --> E["Source quality"]
+    F["Tweets by journalist"] --> G["Spam index"]
+    B --> H["Weighted composite"]
+    C --> H
+    D --> H
+    E --> H
+    G --> H
+    H --> I{"Resolved claims >= threshold?"}
+    I -- "yes" --> J["Ranked score"]
+    I -- "no" --> K["Insufficient data"]
+```
+
+---
+
 ## Project Structure
 
 ```text
