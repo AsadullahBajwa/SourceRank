@@ -213,6 +213,103 @@ flowchart LR
 
 ---
 
+## Database Model
+
+SourceRank uses two SQLite databases to keep raw tweet capture separate from derived verification data.
+
+```mermaid
+erDiagram
+    TWEETS {
+        text id PK
+        text handle
+        text text
+        text created_at
+        integer retweet_count
+        integer like_count
+        integer reply_count
+        integer is_retweet
+        integer is_reply
+        text url
+        text scraped_at
+    }
+
+    SCRAPE_LOG {
+        text handle
+        text scraped_at
+        integer tweet_count
+        text status
+        text error
+    }
+
+    SCRAPE_WINDOWS {
+        text handle
+        text since_date
+        text until_date
+        text scraped_at
+        integer tweet_count
+        text status
+        text error
+    }
+
+    CLAIMS {
+        text id PK
+        text tweet_id FK
+        text handle
+        text claim_text
+        text claim_type
+        text entities
+        text tweet_created_at
+        integer verification_window
+        text verdict
+        text verdict_source
+        text verdict_url
+        real confidence
+    }
+
+    PROCESSED_TWEETS {
+        text tweet_id PK
+        text processed_at
+    }
+
+    ARTICLES {
+        text id PK
+        text source_name
+        text country
+        text title
+        text summary
+        text url
+        text published
+        text fetched_at
+    }
+
+    FEED_FETCH_LOG {
+        text source_name
+        text fetched_at
+        text status
+        integer entry_count
+        integer new_count
+        text error
+    }
+
+    TWEETS ||--o{ CLAIMS : "produces"
+    TWEETS ||--o| PROCESSED_TWEETS : "processed flag"
+    SCRAPE_WINDOWS ||--o{ TWEETS : "bounds scrape"
+    ARTICLES ||--|| FEED_FETCH_LOG : "feed health"
+```
+
+| Table | Database | Purpose |
+|---|---|---|
+| `tweets` | `tweets.db` | Raw scraped tweet records |
+| `scrape_log` | `tweets.db` | Per-handle scrape run summary |
+| `scrape_windows` | `tweets.db` | Monthly scrape window checkpointing |
+| `claims` | `claims.db` | Extracted claims, verdicts, confidence, source links |
+| `processed_tweets` | `claims.db` | Idempotency flag for claim extraction |
+| `articles` | `claims.db` | RSS article corpus used for verification |
+| `articles_fts` | `claims.db` | FTS5 index over article title and summary |
+| `feed_fetch_log` | `claims.db` | RSS health and freshness log |
+
+---
+
 ## Project Structure
 
 ```text
