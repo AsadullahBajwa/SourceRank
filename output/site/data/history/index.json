@@ -1,6 +1,7 @@
 {
-  "latest": "scores_2026-05-20.json",
+  "latest": "scores_2026-06-16.json",
   "snapshots": [
-    "scores_2026-05-20.json"
+    "scores_2026-05-20.json",
+    "scores_2026-06-16.json"
   ]
 }
