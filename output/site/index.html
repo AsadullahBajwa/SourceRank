@@ -275,7 +275,7 @@ Promise.all([
       tbody.insertAdjacentHTML('beforeend', `
         <tr data-country="${j.country}" data-beat="${j.beat}">
           <td class="rank">${rank}</td>
-          <td class="handle"><a href="https://x.com/${j.handle}" target="_blank">@${j.handle}</a></td>
+          <td class="handle"><a href="journalist.html?handle=${encodeURIComponent(j.handle)}">@${j.handle}</a></td>
           <td class="name">${j.name || j.handle}</td>
           <td class="beat">${j.beat || '—'}</td>
           <td class="country">${j.country || '—'}</td>

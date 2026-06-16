@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SourceRank Journalist Profile</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 2rem;
+      border-bottom: 1px solid #1e2530;
+    }
+    nav {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+    }
+    nav a, a {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+    nav a:hover, a:hover { text-decoration: underline; }
+    h1 {
+      font-size: 2rem;
+      color: #f8fafc;
+      margin-bottom: 0.35rem;
+    }
+    .subtle { color: #94a3b8; }
+    main {
+      padding: 1.5rem 2rem 3rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+    }
+    .metric, .panel {
+      background: #141923;
+      border: 1px solid #263246;
+      border-radius: 8px;
+    }
+    .metric {
+      padding: 1rem;
+    }
+    .metric span {
+      display: block;
+      color: #94a3b8;
+      font-size: 0.78rem;
+      margin-bottom: 0.4rem;
+    }
+    .metric strong {
+      color: #f8fafc;
+      font-size: 1.4rem;
+    }
+    .panel {
+      overflow: hidden;
+    }
+    .panel h2 {
+      font-size: 1rem;
+      padding: 1rem;
+      border-bottom: 1px solid #263246;
+      color: #f8fafc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+    th, td {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid #1e2530;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: #94a3b8;
+      font-weight: 700;
+      background: #182232;
+    }
+    .verdict {
+      display: inline-block;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .CONFIRMED { background: #064e3b; color: #86efac; }
+    .REFUTED { background: #450a0a; color: #fca5a5; }
+    .UNVERIFIED { background: #172554; color: #93c5fd; }
+    .EXPIRED { background: #374151; color: #d1d5db; }
+    .PENDING { background: #422006; color: #fcd34d; }
+    .empty {
+      padding: 2rem;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <a href="index.html">Leaderboard</a>
+    <a href="trends.html">Trends</a>
+    <a href="methodology.html">Methodology</a>
+  </nav>
+  <h1 id="title">Loading profile...</h1>
+  <p class="subtle" id="subtitle"></p>
+</header>
+
+<main>
+  <section class="metrics" id="metrics"></section>
+  <section class="panel">
+    <h2>Recent Claims</h2>
+    <div id="claims"></div>
+  </section>
+</main>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const handle = (params.get('handle') || '').toLowerCase();
+const fmt = value => value === undefined || value === null || value === '' ? 'N/A' : value;
+
+function metric(label, value) {
+  return `<div class="metric"><span>${label}</span><strong>${fmt(value)}</strong></div>`;
+}
+
+function renderClaims(claims) {
+  if (!claims.length) {
+    return '<div class="empty">No public claims are available for this journalist yet.</div>';
+  }
+  const rows = claims.slice(0, 50).map(claim => `
+    <tr>
+      <td>${fmt((claim.tweet_created_at || '').slice(0, 10))}</td>
+      <td>${fmt(claim.claim_text)}</td>
+      <td>${fmt(claim.claim_type)}</td>
+      <td><span class="verdict ${fmt(claim.verdict)}">${fmt(claim.verdict)}</span></td>
+      <td>${claim.verdict_url ? `<a href="${claim.verdict_url}" target="_blank">${fmt(claim.verdict_source)}</a>` : fmt(claim.verdict_source)}</td>
+    </tr>
+  `).join('');
+  return `
+    <table>
+      <thead><tr><th>Date</th><th>Claim</th><th>Type</th><th>Verdict</th><th>Source</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+Promise.all([
+  fetch('data/scores.json').then(r => r.json()),
+  fetch('data/claims.json').then(r => r.ok ? r.json() : { claims: [] }).catch(() => ({ claims: [] })),
+]).then(([scores, claimData]) => {
+  const journalist = scores.journalists.find(j => j.handle.toLowerCase() === handle);
+  if (!journalist) {
+    document.getElementById('title').textContent = 'Journalist not found';
+    document.getElementById('subtitle').textContent = 'Return to the leaderboard and choose a listed profile.';
+    document.getElementById('metrics').innerHTML = '';
+    document.getElementById('claims').innerHTML = '<div class="empty">No matching profile.</div>';
+    return;
+  }
+
+  const profileClaims = (claimData.claims || [])
+    .filter(claim => claim.handle.toLowerCase() === handle);
+
+  document.title = `${journalist.name || journalist.handle} | SourceRank`;
+  document.getElementById('title').textContent = journalist.name || `@${journalist.handle}`;
+  document.getElementById('subtitle').innerHTML =
+    `<a href="https://x.com/${journalist.handle}" target="_blank">@${journalist.handle}</a> · ${fmt(journalist.beat)} · ${fmt(journalist.country)}`;
+  document.getElementById('metrics').innerHTML = [
+    metric('Score', journalist.eligible ? journalist.score : 'N/R'),
+    metric('Grade', journalist.eligible ? journalist.grade : 'N/R'),
+    metric('Accuracy', `${journalist.accuracy_rate}%`),
+    metric('Resolved Claims', journalist.resolved_claims),
+    metric('Confirmed', journalist.confirmed),
+    metric('Refuted', journalist.refuted),
+  ].join('');
+  document.getElementById('claims').innerHTML = renderClaims(profileClaims);
+});
+</script>
+</body>
+</html>
