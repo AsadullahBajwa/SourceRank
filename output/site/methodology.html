@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SourceRank Methodology</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    header, main { max-width: 980px; margin: 0 auto; }
+    header { padding: 2rem 2rem 1.25rem; }
+    main { padding: 0 2rem 3rem; }
+    nav { display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.85rem; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1 { color: #f8fafc; font-size: 2rem; margin-bottom: 0.4rem; }
+    h2 { color: #f8fafc; font-size: 1.1rem; margin: 1.5rem 0 0.6rem; }
+    p, li { color: #cbd5e1; }
+    .subtle { color: #94a3b8; }
+    table { width: 100%; border-collapse: collapse; margin: 0.75rem 0 1rem; font-size: 0.9rem; }
+    th, td { padding: 0.75rem; border-bottom: 1px solid #263246; text-align: left; vertical-align: top; }
+    th { color: #94a3b8; background: #182232; }
+    code { background: #182232; color: #e2e8f0; padding: 0.1rem 0.25rem; border-radius: 4px; }
+    .panel {
+      background: #141923;
+      border: 1px solid #263246;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <a href="index.html">Leaderboard</a>
+    <a href="trends.html">Trends</a>
+  </nav>
+  <h1>Methodology</h1>
+  <p class="subtle">How SourceRank extracts claims, verifies evidence, and computes credibility scores.</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Score Formula</h2>
+    <table>
+      <thead><tr><th>Dimension</th><th>Weight</th><th>What it measures</th></tr></thead>
+      <tbody>
+        <tr><td>Accuracy Rate</td><td>40%</td><td>Share of resolved claims that were confirmed.</td></tr>
+        <tr><td>Prediction Score</td><td>25%</td><td>Accuracy on breaking, exclusive, and prediction claims.</td></tr>
+        <tr><td>Correction Behavior</td><td>15%</td><td>Penalty for refuted claims without a detected correction signal.</td></tr>
+        <tr><td>Source Quality</td><td>10%</td><td>Share of confirmations from configured tier-one sources.</td></tr>
+        <tr><td>Spam Index</td><td>10%</td><td>Penalty for unusually high original tweet volume.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Verdicts</h2>
+    <table>
+      <thead><tr><th>Verdict</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>CONFIRMED</code></td><td>A relevant tier-one or corroborated source supports the claim.</td></tr>
+        <tr><td><code>REFUTED</code></td><td>A relevant tier-one source directly contradicts the claim.</td></tr>
+        <tr><td><code>UNVERIFIED</code></td><td>The claim is still inside its verification window or evidence is too weak.</td></tr>
+        <tr><td><code>EXPIRED</code></td><td>The verification window passed without enough supporting evidence.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Rank Eligibility</h2>
+    <p>
+      Scores are computed for every active journalist, but leaderboard ranking requires a minimum number
+      of resolved claims. This avoids presenting tiny samples as meaningful rankings. Rows below the
+      threshold are marked <code>N/R</code> on the leaderboard.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>Limitations</h2>
+    <ul>
+      <li>Current rankings are only as strong as local tweet coverage.</li>
+      <li>RSS and Google News evidence can miss stories that are not indexed or published in accessible feeds.</li>
+      <li>Contradiction detection is rule-based and intentionally conservative.</li>
+      <li>Scores are analytical estimates, not judgments of character or professional standing.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
