@@ -20,6 +20,7 @@ The product goal is simple: when a breaking-news tweet appears, the reader shoul
 | Verification | Local RSS corpus, FTS5 search, Google News RSS fallback |
 | Storage | Two SQLite databases: `tweets.db` and `claims.db` |
 | Publishing | `output/site/data/scores.json` consumed by a static frontend |
+| Extension prototype | `extension/` Manifest V3 scaffold for future X overlays |
 | Operating model | Local scheduled refreshes, GitHub Actions for static validation |
 | Cost target | $0/month infrastructure |
 
@@ -333,6 +334,7 @@ source-ranker/
 |-- output/site/
 |   |-- index.html               # static leaderboard UI
 |   `-- data/scores.json         # public data artifact
+|-- extension/                   # browser overlay prototype scaffold
 |-- scheduler.py                 # pipeline orchestrator
 |-- config.py                    # paths, weights, source settings
 `-- tests/
@@ -499,10 +501,18 @@ The score is:
 
 ### Phase 3 - Product Surface
 
-- [ ] Journalist profile pages with claim history
-- [ ] Score trend charts from weekly snapshots
-- [ ] Browser extension overlay for X
+- [x] Journalist profile pages with claim history
+- [x] Score trend page from weekly snapshots
+- [ ] Browser extension overlay with live score matching
 - [ ] Public methodology and dispute workflow
+
+### Phase 4 - Browser Extension
+
+- [x] Manifest V3 scaffold
+- [x] X/Twitter content script prototype
+- [ ] Fetch static `scores.json` from GitHub Pages
+- [ ] Render inline score badges beside matching handles
+- [ ] Link overlay badges to SourceRank profile pages
 
 ---
 

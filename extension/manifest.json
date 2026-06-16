@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "SourceRank Overlay",
+  "version": "0.1.0",
+  "description": "Prototype overlay for showing SourceRank context on X profiles and timelines.",
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["content.js"],
+      "css": ["overlay.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": ["https://x.com/*", "https://twitter.com/*"]
+}
