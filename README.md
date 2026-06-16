@@ -382,6 +382,7 @@ python scrapers/news_scraper.py
 python scrapers/news_scraper.py --tier 1 --limit 5 --dry-run
 
 # Backfill active journalists that still have no local tweets
+python scripts/coverage_plan.py --limit 10
 python scrapers/tweet_scraper.py --only-missing --list-selected
 python scrapers/tweet_scraper.py --only-missing --limit 5 --list-selected
 python scrapers/tweet_scraper.py --only-missing

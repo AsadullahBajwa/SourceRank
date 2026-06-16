@@ -20,6 +20,7 @@ from scrapers.news_scraper import select_sources
 from scrapers.tweet_scraper import select_journalists
 from scheduler import _history_status, select_steps
 from scripts.audit_registry import build_report
+from scripts.coverage_plan import missing_active_handles
 from time_utils import parse_utc
 
 
@@ -263,6 +264,20 @@ class RegistryAuditTests(unittest.TestCase):
         self.assertNotIn("Alex Example", report["active_duplicate_names"])
         self.assertEqual(report["active_without_tweets_by_country"], {"Pakistan": 1})
         self.assertEqual(report["active_without_tweets"], ["beta"])
+
+    def test_missing_active_handles_can_filter_country_and_limit(self):
+        rows = [
+            {"handle": "alpha", "country": "US", "active": "true"},
+            {"handle": "beta", "country": "Pakistan", "active": "true"},
+            {"handle": "gamma", "country": "Pakistan", "active": "true"},
+        ]
+        handles = missing_active_handles(
+            rows,
+            {"gamma": 2},
+            country="Pakistan",
+            limit=1,
+        )
+        self.assertEqual(handles, ["beta"])
 
 
 class TweetScraperTests(unittest.TestCase):
