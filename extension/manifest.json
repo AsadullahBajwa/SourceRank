@@ -11,5 +11,9 @@
       "run_at": "document_idle"
     }
   ],
-  "host_permissions": ["https://x.com/*", "https://twitter.com/*"]
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://asadullahbajwa.github.io/*"
+  ]
 }
