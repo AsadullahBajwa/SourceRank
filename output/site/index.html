@@ -20,6 +20,20 @@
       border-bottom: 1px solid #1e2530;
     }
 
+    nav {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+    }
+
+    nav a {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+
+    nav a:hover { text-decoration: underline; }
+
     header h1 {
       font-size: 1.8rem;
       font-weight: 700;
@@ -176,6 +190,10 @@
 <body>
 
 <header>
+  <nav>
+    <a href="trends.html">Trends</a>
+    <a href="methodology.html">Methodology</a>
+  </nav>
   <h1>SourceRank</h1>
   <p>Journalist credibility scores based on verified claims on X (Twitter)</p>
   <div class="meta" id="meta">Loading...</div>
