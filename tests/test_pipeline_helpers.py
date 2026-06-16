@@ -8,7 +8,7 @@ from unittest import mock
 import config
 from find_handles import zero_tweet_handles
 from pipeline.claim_extractor import normalize_claim_type, normalize_confidence, quick_skip
-from pipeline.scorer import compute_source_quality, score_journalist
+from pipeline.scorer import compute_source_quality, public_claim_record, score_journalist
 from pipeline.verifier import (
     VERDICT_REFUTED,
     determine_verdict,
@@ -76,6 +76,23 @@ class ScorerTests(unittest.TestCase):
         conn.close()
         self.assertTrue(score["eligible"])
         self.assertEqual(score["min_resolved_claims"], 1)
+
+    def test_public_claim_record_limits_fields_for_site_export(self):
+        record = public_claim_record({
+            "id": "c1",
+            "tweet_id": "t1",
+            "handle": "alpha",
+            "claim_text": "A checkable claim",
+            "claim_type": "prediction",
+            "tweet_created_at": "2026-06-01T00:00:00",
+            "verdict": "CONFIRMED",
+            "verdict_source": "Reuters",
+            "verdict_url": "https://example.test",
+            "confidence": 0.8,
+            "internal_note": "not exported",
+        })
+        self.assertEqual(record["handle"], "alpha")
+        self.assertNotIn("internal_note", record)
 
 
 class SchedulerTests(unittest.TestCase):

@@ -194,6 +194,38 @@ def load_claims_for_handle(handle: str, conn: sqlite3.Connection) -> list[dict]:
     return [dict(zip(cols, row)) for row in rows]
 
 
+def public_claim_record(claim: dict) -> dict:
+    return {
+        "id": claim.get("id", ""),
+        "tweet_id": claim.get("tweet_id", ""),
+        "handle": claim.get("handle", ""),
+        "claim_text": claim.get("claim_text", ""),
+        "claim_type": claim.get("claim_type", "general"),
+        "tweet_created_at": claim.get("tweet_created_at", ""),
+        "verdict": claim.get("verdict", "PENDING"),
+        "verdict_source": claim.get("verdict_source", ""),
+        "verdict_url": claim.get("verdict_url", ""),
+        "confidence": claim.get("confidence", 0.5),
+    }
+
+
+def load_public_claims(conn: sqlite3.Connection) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT id, tweet_id, handle, claim_text, claim_type, tweet_created_at,
+               verdict, verdict_source, verdict_url, confidence
+        FROM claims
+        ORDER BY COALESCE(tweet_created_at, extracted_at) DESC
+        """
+    ).fetchall()
+    cols = [d[0] for d in conn.execute("""
+        SELECT id, tweet_id, handle, claim_text, claim_type, tweet_created_at,
+               verdict, verdict_source, verdict_url, confidence
+        FROM claims LIMIT 0
+    """).description]
+    return [public_claim_record(dict(zip(cols, row))) for row in rows]
+
+
 def write_score_outputs(output: dict) -> None:
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
     os.makedirs(config.HISTORY_DIR, exist_ok=True)
@@ -218,6 +250,12 @@ def write_score_outputs(output: dict) -> None:
     }
     with open(os.path.join(config.HISTORY_DIR, "index.json"), "w", encoding="utf-8") as f:
         json.dump(index, f, indent=2)
+
+
+def write_claim_outputs(claims: list[dict]) -> None:
+    os.makedirs(config.OUTPUT_DIR, exist_ok=True)
+    with open(os.path.join(config.OUTPUT_DIR, "claims.json"), "w", encoding="utf-8") as f:
+        json.dump({"claims": claims}, f, indent=2)
 
 
 # ---------------------------------------------------------------------------
@@ -254,11 +292,13 @@ def main():
         "generated_at": utc_now_iso(),
         "journalists": scores,
     }
+    public_claims = load_public_claims(claims_conn)
 
     if args.dry_run:
         print(json.dumps(output, indent=2))
     else:
         write_score_outputs(output)
+        write_claim_outputs(public_claims)
         log.info(f"Scores written to {os.path.join(config.OUTPUT_DIR, 'scores.json')}")
 
     claims_conn.close()
