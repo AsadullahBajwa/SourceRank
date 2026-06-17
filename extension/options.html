@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SourceRank Overlay Options</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 2rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+    }
+    main {
+      max-width: 720px;
+    }
+    h1 {
+      margin-bottom: 0.35rem;
+      color: #f8fafc;
+    }
+    p {
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    label {
+      display: block;
+      margin: 1.5rem 0 0.5rem;
+      font-weight: 700;
+    }
+    input {
+      width: 100%;
+      padding: 0.7rem;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      background: #141923;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.6rem 0.9rem;
+      border: 0;
+      border-radius: 6px;
+      background: #2563eb;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 1rem;
+      color: #86efac;
+      min-height: 1.4rem;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>SourceRank Overlay Options</h1>
+  <p>Configure where the extension reads leaderboard data and profile pages from.</p>
+
+  <label for="site-url">SourceRank site URL</label>
+  <input id="site-url" type="url" placeholder="https://asadullahbajwa.github.io/SourceRank" />
+
+  <button id="save">Save</button>
+  <div id="status"></div>
+</main>
+<script src="options.js"></script>
+</body>
+</html>
