@@ -48,12 +48,22 @@ function badgeText(row) {
   return `SourceRank ${row.score}`;
 }
 
+function badgeDetails(row) {
+  return [
+    row.name || `@${row.handle}`,
+    `Accuracy: ${row.accuracy_rate ?? "N/A"}%`,
+    `Resolved: ${row.resolved_claims ?? 0}`,
+    `Claims: ${row.total_claims ?? 0}`,
+  ].join("\n");
+}
+
 function attachBadge(link, row) {
   if (!row || link.querySelector(`.${BADGE_CLASS}`)) return;
   const badge = document.createElement("span");
   badge.className = BADGE_CLASS;
   badge.textContent = badgeText(row);
-  badge.title = `${row.name || row.handle}: ${row.rank_status || "ranked"}. Open SourceRank profile.`;
+  badge.title = `${badgeDetails(row)}\nOpen SourceRank profile.`;
+  badge.dataset.details = badgeDetails(row);
   badge.setAttribute("role", "link");
   badge.setAttribute("tabindex", "0");
   badge.addEventListener("click", event => {

@@ -521,6 +521,7 @@ The score is:
 - [x] Fetch static `scores.json` from GitHub Pages
 - [x] Render inline score badges beside matching handles
 - [x] Link overlay badges to SourceRank profile pages
+- [x] Add hover/focus details for extension badges
 
 ---
 

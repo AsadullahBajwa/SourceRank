@@ -10,9 +10,28 @@
   line-height: 1.5;
   white-space: nowrap;
   cursor: pointer;
+  position: relative;
 }
 
 .sourcerank-score-badge:focus {
   outline: 2px solid #93c5fd;
   outline-offset: 2px;
+}
+
+.sourcerank-score-badge:hover::after,
+.sourcerank-score-badge:focus::after {
+  content: attr(data-details);
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  min-width: 190px;
+  white-space: pre-line;
+  padding: 8px 10px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #020617;
+  color: #e2e8f0;
+  font: 500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.45;
+  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.35);
 }

@@ -9,9 +9,10 @@ Current behavior:
 - Detects visible handle links in the page.
 - Fetches the static `scores.json` artifact from the configured SourceRank site URL.
 - Adds an inline SourceRank badge beside handles that match leaderboard rows.
+- Shows a small hover/focus detail card with accuracy, resolved claim count, and total claims.
 - Opens the matching SourceRank profile when a badge is clicked.
 
 Next implementation steps:
 
-1. Add hover cards with accuracy, resolved claim count, and verdict totals.
+1. Add verdict totals to hover cards.
 2. Package signed builds for Chrome and Firefox.
