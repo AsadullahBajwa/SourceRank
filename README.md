@@ -508,7 +508,7 @@ The score is:
 - [x] Journalist profile pages with claim history
 - [x] Score trend page from weekly snapshots
 - [ ] Browser extension overlay with live score matching
-- [ ] Public methodology and dispute workflow
+- [x] Public methodology and dispute workflow
 
 ### Phase 4 - Browser Extension
 

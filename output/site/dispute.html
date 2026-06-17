@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SourceRank Dispute Workflow</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    header, main { max-width: 980px; margin: 0 auto; }
+    header { padding: 2rem 2rem 1.25rem; }
+    main { padding: 0 2rem 3rem; }
+    nav { display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.85rem; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1 { color: #f8fafc; font-size: 2rem; margin-bottom: 0.4rem; }
+    h2 { color: #f8fafc; font-size: 1.1rem; margin: 1.5rem 0 0.6rem; }
+    p, li { color: #cbd5e1; }
+    .subtle { color: #94a3b8; }
+    .panel {
+      background: #141923;
+      border: 1px solid #263246;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    ol, ul { padding-left: 1.25rem; }
+    code {
+      background: #182232;
+      padding: 0.1rem 0.25rem;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <a href="index.html">Leaderboard</a>
+    <a href="trends.html">Trends</a>
+    <a href="methodology.html">Methodology</a>
+  </nav>
+  <h1>Dispute Workflow</h1>
+  <p class="subtle">How score, claim, source, and verdict issues should be challenged.</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>What can be disputed?</h2>
+    <ul>
+      <li>A claim was extracted from a tweet incorrectly.</li>
+      <li>A claim has a better source than the one attached to the verdict.</li>
+      <li>A verdict should be changed to <code>CONFIRMED</code>, <code>REFUTED</code>, <code>UNVERIFIED</code>, or <code>EXPIRED</code>.</li>
+      <li>A journalist handle is incorrect, inactive, duplicated, or missing.</li>
+      <li>A score changed because of a data coverage issue rather than real evidence.</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Evidence required</h2>
+    <ol>
+      <li>Journalist handle and affected claim text.</li>
+      <li>Original tweet URL or tweet ID when available.</li>
+      <li>Source URL that supports the requested change.</li>
+      <li>Short explanation of why the current verdict is wrong or incomplete.</li>
+    </ol>
+  </section>
+
+  <section class="panel">
+    <h2>Review policy</h2>
+    <p>
+      SourceRank should favor conservative changes: keep claims unresolved when evidence is weak,
+      prefer tier-one source links for confirmation or refutation, and avoid treating commentary
+      as factual claims. Disputed rows should be rechecked with `python pipeline/verifier.py --recheck`
+      after the news corpus has been refreshed.
+    </p>
+  </section>
+</main>
+</body>
+</html>
