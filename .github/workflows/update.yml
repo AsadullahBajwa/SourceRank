@@ -28,8 +28,5 @@ jobs:
       - name: Run regression tests
         run: python -m unittest discover -s tests -v
 
-      - name: Check static site artifacts exist
-        run: |
-          test -f output/site/index.html
-          test -f output/site/data/scores.json
-          test -f output/site/data/history/index.json
+      - name: Validate static site artifacts
+        run: python scripts/site_check.py
