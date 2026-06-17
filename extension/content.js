@@ -1,4 +1,5 @@
 const SOURCE_RANK_DATA_URL = "https://asadullahbajwa.github.io/SourceRank/data/scores.json";
+const SOURCE_RANK_SITE_URL = "https://asadullahbajwa.github.io/SourceRank";
 const BADGE_CLASS = "sourcerank-score-badge";
 const SCANNED_ATTR = "data-sourcerank-scanned";
 
@@ -36,7 +37,19 @@ function attachBadge(link, row) {
   const badge = document.createElement("span");
   badge.className = BADGE_CLASS;
   badge.textContent = badgeText(row);
-  badge.title = `${row.name || row.handle}: ${row.rank_status || "ranked"}`;
+  badge.title = `${row.name || row.handle}: ${row.rank_status || "ranked"}. Open SourceRank profile.`;
+  badge.setAttribute("role", "link");
+  badge.setAttribute("tabindex", "0");
+  badge.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.open(`${SOURCE_RANK_SITE_URL}/journalist.html?handle=${encodeURIComponent(row.handle)}`, "_blank", "noopener");
+  });
+  badge.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") {
+      badge.click();
+    }
+  });
   link.appendChild(badge);
 }
 

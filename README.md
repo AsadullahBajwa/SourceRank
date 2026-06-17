@@ -514,9 +514,9 @@ The score is:
 
 - [x] Manifest V3 scaffold
 - [x] X/Twitter content script prototype
-- [ ] Fetch static `scores.json` from GitHub Pages
-- [ ] Render inline score badges beside matching handles
-- [ ] Link overlay badges to SourceRank profile pages
+- [x] Fetch static `scores.json` from GitHub Pages
+- [x] Render inline score badges beside matching handles
+- [x] Link overlay badges to SourceRank profile pages
 
 ---
 
