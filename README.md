@@ -510,6 +510,7 @@ The score is:
 
 - [x] Journalist profile pages with claim history
 - [x] Score trend page from weekly snapshots
+- [x] Coverage page for dataset gaps
 - [ ] Browser extension overlay with live score matching
 - [x] Public methodology and dispute workflow
 

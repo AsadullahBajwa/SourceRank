@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SourceRank Coverage</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    header, main { max-width: 1080px; margin: 0 auto; }
+    header { padding: 2rem 2rem 1rem; }
+    main { padding: 0 2rem 3rem; display: grid; gap: 1.25rem; }
+    nav { display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.85rem; flex-wrap: wrap; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1 { color: #f8fafc; font-size: 2rem; margin-bottom: 0.4rem; }
+    .subtle { color: #94a3b8; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
+    .metric, .panel { background: #141923; border: 1px solid #263246; border-radius: 8px; }
+    .metric { padding: 1rem; }
+    .metric span { display: block; color: #94a3b8; font-size: 0.78rem; margin-bottom: 0.35rem; }
+    .metric strong { color: #f8fafc; font-size: 1.4rem; }
+    .panel { overflow: hidden; }
+    .panel h2 { padding: 1rem; border-bottom: 1px solid #263246; font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 0.8rem 1rem; border-bottom: 1px solid #1e2530; text-align: left; }
+    th { color: #94a3b8; background: #182232; }
+    .bar { width: 170px; height: 8px; border-radius: 4px; background: #263246; overflow: hidden; }
+    .bar span { display: block; height: 100%; background: #22c55e; }
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <a href="index.html">Leaderboard</a>
+    <a href="trends.html">Trends</a>
+    <a href="methodology.html">Methodology</a>
+    <a href="dispute.html">Dispute</a>
+  </nav>
+  <h1>Coverage</h1>
+  <p class="subtle">How much of the journalist registry has enough local evidence to support ranking.</p>
+</header>
+
+<main>
+  <section class="metrics" id="metrics"></section>
+  <section class="panel">
+    <h2>Coverage by Country</h2>
+    <div id="countries"></div>
+  </section>
+  <section class="panel">
+    <h2>Handles Needing More Evidence</h2>
+    <div id="gaps"></div>
+  </section>
+</main>
+
+<script>
+const pct = (part, total) => total ? Math.round((part / total) * 1000) / 10 : 0;
+const metric = (label, value) => `<div class="metric"><span>${label}</span><strong>${value}</strong></div>`;
+
+function table(headers, rows) {
+  return `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+}
+
+fetch('data/scores.json')
+  .then(r => r.json())
+  .then(data => {
+    const journalists = data.journalists || [];
+    const withClaims = journalists.filter(j => (j.total_claims || 0) > 0);
+    const ranked = journalists.filter(j => j.eligible !== false);
+    const noClaims = journalists.filter(j => (j.total_claims || 0) === 0);
+
+    document.getElementById('metrics').innerHTML = [
+      metric('Tracked', journalists.length),
+      metric('With claims', withClaims.length),
+      metric('Ranked', ranked.length),
+      metric('No claims yet', noClaims.length),
+    ].join('');
+
+    const byCountry = [...new Set(journalists.map(j => j.country || 'Unknown'))].sort();
+    document.getElementById('countries').innerHTML = table(
+      ['Country', 'Tracked', 'With Claims', 'Ranked', 'Evidence Coverage'],
+      byCountry.map(country => {
+        const rows = journalists.filter(j => (j.country || 'Unknown') === country);
+        const covered = rows.filter(j => (j.total_claims || 0) > 0).length;
+        const rankedRows = rows.filter(j => j.eligible !== false).length;
+        const coverage = pct(covered, rows.length);
+        return `<tr>
+          <td>${country}</td>
+          <td>${rows.length}</td>
+          <td>${covered}</td>
+          <td>${rankedRows}</td>
+          <td><div class="bar" title="${coverage}%"><span style="width:${coverage}%"></span></div></td>
+        </tr>`;
+      })
+    );
+
+    document.getElementById('gaps').innerHTML = table(
+      ['Handle', 'Country', 'Beat', 'Claims', 'Resolved'],
+      noClaims.slice(0, 50).map(j => `
+        <tr>
+          <td><a href="journalist.html?handle=${encodeURIComponent(j.handle)}">@${j.handle}</a></td>
+          <td>${j.country || 'N/A'}</td>
+          <td>${j.beat || 'N/A'}</td>
+          <td>${j.total_claims || 0}</td>
+          <td>${j.resolved_claims || 0}</td>
+        </tr>`)
+    );
+  });
+</script>
+</body>
+</html>
