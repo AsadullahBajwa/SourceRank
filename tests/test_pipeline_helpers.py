@@ -23,6 +23,7 @@ from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates
 from scripts.coverage_plan import missing_active_handles
 from scripts.source_coverage import build_source_report
+from scripts.site_check import missing_site_files
 from time_utils import parse_utc
 
 
@@ -357,6 +358,17 @@ class NewsScraperTests(unittest.TestCase):
         ])
         self.assertEqual(report["total_sources"], 3)
         self.assertEqual(report["tier1_by_country"], {"Pakistan": 1, "global": 1})
+
+
+class SiteCheckTests(unittest.TestCase):
+    def test_missing_site_files_reports_required_artifacts(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            site_dir = os.path.join(tmpdir, "site")
+            data_dir = os.path.join(site_dir, "data")
+            os.makedirs(data_dir)
+            missing = missing_site_files(site_dir, data_dir)
+        self.assertTrue(any(path.endswith("index.html") for path in missing))
+        self.assertTrue(any(path.endswith("scores.json") for path in missing))
 
 
 if __name__ == "__main__":

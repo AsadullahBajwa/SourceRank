@@ -380,6 +380,7 @@ python scheduler.py --from-step extract --through-step score --dry-run
 
 # Run the regression suite
 python -m unittest discover -s tests -v
+python scripts/site_check.py
 
 # Refresh RSS feeds; fetch health is stored in claims.db/feed_fetch_log
 python scrapers/news_scraper.py
