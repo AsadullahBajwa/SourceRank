@@ -1,13 +1,29 @@
-const SOURCE_RANK_DATA_URL = "https://asadullahbajwa.github.io/SourceRank/data/scores.json";
-const SOURCE_RANK_SITE_URL = "https://asadullahbajwa.github.io/SourceRank";
+const DEFAULT_SITE_URL = "https://asadullahbajwa.github.io/SourceRank";
 const BADGE_CLASS = "sourcerank-score-badge";
 const SCANNED_ATTR = "data-sourcerank-scanned";
 
 let scoreMapPromise;
+let siteUrlPromise;
+
+function configuredSiteUrl() {
+  if (!siteUrlPromise) {
+    siteUrlPromise = new Promise(resolve => {
+      if (!chrome?.storage?.sync) {
+        resolve(DEFAULT_SITE_URL);
+        return;
+      }
+      chrome.storage.sync.get({ siteUrl: DEFAULT_SITE_URL }, items => {
+        resolve((items.siteUrl || DEFAULT_SITE_URL).replace(/\/$/, ""));
+      });
+    });
+  }
+  return siteUrlPromise;
+}
 
 function loadScores() {
   if (!scoreMapPromise) {
-    scoreMapPromise = fetch(SOURCE_RANK_DATA_URL)
+    scoreMapPromise = configuredSiteUrl()
+      .then(siteUrl => fetch(`${siteUrl}/data/scores.json`))
       .then(response => response.ok ? response.json() : { journalists: [] })
       .then(data => new Map(
         (data.journalists || []).map(row => [row.handle.toLowerCase(), row])
@@ -43,7 +59,9 @@ function attachBadge(link, row) {
   badge.addEventListener("click", event => {
     event.preventDefault();
     event.stopPropagation();
-    window.open(`${SOURCE_RANK_SITE_URL}/journalist.html?handle=${encodeURIComponent(row.handle)}`, "_blank", "noopener");
+    configuredSiteUrl().then(siteUrl => {
+      window.open(`${siteUrl}/journalist.html?handle=${encodeURIComponent(row.handle)}`, "_blank", "noopener");
+    });
   });
   badge.addEventListener("keydown", event => {
     if (event.key === "Enter" || event.key === " ") {
