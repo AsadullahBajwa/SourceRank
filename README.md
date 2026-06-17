@@ -487,6 +487,8 @@ The score is:
 
 ## Roadmap
 
+Detailed execution notes live in [`docs/PHASE_PLAN.md`](docs/PHASE_PLAN.md).
+
 ### Phase 1 - Local MVP
 
 - [x] Project structure and schema design
