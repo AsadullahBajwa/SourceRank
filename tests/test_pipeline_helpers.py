@@ -20,6 +20,7 @@ from scrapers.news_scraper import select_sources
 from scrapers.tweet_scraper import select_journalists
 from scheduler import _history_status, select_steps
 from scripts.audit_registry import build_report
+from scripts.claim_review import review_candidates
 from scripts.coverage_plan import missing_active_handles
 from time_utils import parse_utc
 
@@ -278,6 +279,38 @@ class RegistryAuditTests(unittest.TestCase):
             limit=1,
         )
         self.assertEqual(handles, ["beta"])
+
+
+class ClaimReviewTests(unittest.TestCase):
+    def test_review_candidates_prioritizes_low_confidence_claims(self):
+        conn = sqlite3.connect(":memory:")
+        conn.execute("""
+            CREATE TABLE claims (
+                id TEXT,
+                handle TEXT,
+                claim_text TEXT,
+                claim_type TEXT,
+                verdict TEXT,
+                confidence REAL,
+                verdict_source TEXT,
+                verdict_url TEXT,
+                tweet_created_at TEXT
+            )
+        """)
+        conn.executemany(
+            """
+            INSERT INTO claims
+                (id, handle, claim_text, claim_type, verdict, confidence, tweet_created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                ("c1", "alpha", "Weak claim", "general", "UNVERIFIED", 0.2, "2026-06-01"),
+                ("c2", "beta", "Strong claim", "general", "CONFIRMED", 0.9, "2026-06-02"),
+            ],
+        )
+        rows = review_candidates(conn, ["UNVERIFIED"], limit=10)
+        conn.close()
+        self.assertEqual([row["id"] for row in rows], ["c1"])
 
 
 class TweetScraperTests(unittest.TestCase):

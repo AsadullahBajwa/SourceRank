@@ -393,6 +393,10 @@ python scrapers/tweet_scraper.py --only-missing --limit 5
 # Process scraped tweets in bounded local LLM batches
 python pipeline/claim_extractor.py --limit 500
 
+# Review weak or unresolved claims before trusting score movement
+python scripts/claim_review.py --limit 25
+python scripts/claim_review.py --verdict UNVERIFIED --json
+
 # Verify claims in bounded batches, especially when Google News is enabled
 python pipeline/verifier.py --recheck --limit 100
 
@@ -497,7 +501,7 @@ The score is:
 - [ ] Raise coverage from 17 active handles to 100+ journalists
 - [ ] Expand historical tweet import coverage
 - [ ] Improve country-specific RSS source depth
-- [ ] Add claim review tools for false positive extraction audits
+- [x] Add claim review tools for false positive extraction audits
 
 ### Phase 3 - Product Surface
 
