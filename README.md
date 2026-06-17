@@ -370,6 +370,8 @@ Because GitHub Actions cannot access the local X session or Ollama instance, lea
 python scripts/audit_registry.py
 python scripts/audit_registry.py --max-missing 10
 python scripts/audit_registry.py --json
+python scripts/source_coverage.py
+python scripts/source_coverage.py --json
 
 # Check local DB and leaderboard health
 python scheduler.py --status
@@ -500,6 +502,7 @@ The score is:
 
 - [ ] Raise coverage from 17 active handles to 100+ journalists
 - [ ] Expand historical tweet import coverage
+- [x] Add RSS source depth audit by country, language, and tier
 - [ ] Improve country-specific RSS source depth
 - [x] Add claim review tools for false positive extraction audits
 

@@ -22,6 +22,7 @@ from scheduler import _history_status, select_steps
 from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates
 from scripts.coverage_plan import missing_active_handles
+from scripts.source_coverage import build_source_report
 from time_utils import parse_utc
 
 
@@ -347,6 +348,15 @@ class NewsScraperTests(unittest.TestCase):
         ]
         selected = select_sources(sources, country="Pakistan", tier=1, limit=1)
         self.assertEqual([source["name"] for source in selected], ["Dawn"])
+
+    def test_build_source_report_counts_tiers_and_countries(self):
+        report = build_source_report([
+            {"country": "global", "language": "en", "tier": "1"},
+            {"country": "Pakistan", "language": "en", "tier": "1"},
+            {"country": "Pakistan", "language": "ur", "tier": "2"},
+        ])
+        self.assertEqual(report["total_sources"], 3)
+        self.assertEqual(report["tier1_by_country"], {"Pakistan": 1, "global": 1})
 
 
 if __name__ == "__main__":
