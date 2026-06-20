@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "Prototype overlay for showing SourceRank context on X profiles and timelines.",
   "permissions": ["storage"],
+  "action": {
+    "default_title": "SourceRank",
+    "default_popup": "popup.html"
+  },
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],

@@ -6,6 +6,7 @@ Current behavior:
 
 - Runs on `x.com` and `twitter.com`.
 - Provides an options page for configuring the SourceRank site URL.
+- Provides a browser-action popup with leaderboard and options shortcuts.
 - Detects visible handle links in the page.
 - Fetches the static `scores.json` artifact from the configured SourceRank site URL.
 - Adds an inline SourceRank badge beside handles that match leaderboard rows.
