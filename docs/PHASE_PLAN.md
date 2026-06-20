@@ -75,3 +75,4 @@ Current CI runs:
 - Python compilation across core scripts.
 - `python -m unittest discover -s tests -v`.
 - `python scripts/site_check.py` for static site pages and JSON artifacts.
+- Local `.html` links between static site pages.

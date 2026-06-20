@@ -8,6 +8,7 @@ Usage:
 
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,6 +29,8 @@ REQUIRED_DATA_FILES = [
     "claims.json",
     os.path.join("history", "index.json"),
 ]
+
+LOCAL_HREF_RE = re.compile(r'href=["\']([^"\']+\.html(?:\?[^"\']*)?)["\']')
 
 
 def missing_site_files(site_dir: str, data_dir: str) -> list[str]:
@@ -66,6 +69,22 @@ def validate_site(site_dir: str, data_dir: str) -> list[str]:
         errors.append("claims.json must contain a claims list")
     if not isinstance(history.get("snapshots"), list):
         errors.append("history/index.json must contain a snapshots list")
+    errors.extend(validate_local_links(site_dir))
+    return errors
+
+
+def validate_local_links(site_dir: str) -> list[str]:
+    errors = []
+    for file_name in REQUIRED_SITE_FILES:
+        path = os.path.join(site_dir, file_name)
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            html = f.read()
+        for href in LOCAL_HREF_RE.findall(html):
+            target = href.split("?", 1)[0]
+            if not os.path.exists(os.path.join(site_dir, target)):
+                errors.append(f"{file_name} links to missing local page: {href}")
     return errors
 
 

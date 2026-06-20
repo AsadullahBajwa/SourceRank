@@ -23,7 +23,7 @@ from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates
 from scripts.coverage_plan import missing_active_handles
 from scripts.source_coverage import build_source_report
-from scripts.site_check import missing_site_files
+from scripts.site_check import missing_site_files, validate_local_links
 from time_utils import parse_utc
 
 
@@ -369,6 +369,14 @@ class SiteCheckTests(unittest.TestCase):
             missing = missing_site_files(site_dir, data_dir)
         self.assertTrue(any(path.endswith("index.html") for path in missing))
         self.assertTrue(any(path.endswith("scores.json") for path in missing))
+
+    def test_validate_local_links_reports_missing_pages(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for name in ["index.html", "journalist.html", "trends.html", "coverage.html", "methodology.html", "dispute.html"]:
+                with open(os.path.join(tmpdir, name), "w", encoding="utf-8") as f:
+                    f.write('<a href="missing.html">Missing</a>' if name == "index.html" else "")
+            errors = validate_local_links(tmpdir)
+        self.assertEqual(errors, ["index.html links to missing local page: missing.html"])
 
 
 if __name__ == "__main__":
