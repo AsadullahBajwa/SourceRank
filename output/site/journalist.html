@@ -103,6 +103,22 @@
       color: #64748b;
       text-align: center;
     }
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      padding: 1rem;
+      border-bottom: 1px solid #263246;
+      flex-wrap: wrap;
+    }
+    .controls select,
+    .controls input {
+      background: #101722;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: 0.45rem 0.6rem;
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
@@ -122,6 +138,15 @@
   <section class="metrics" id="metrics"></section>
   <section class="panel">
     <h2>Recent Claims</h2>
+    <div class="controls">
+      <select id="verdict-filter">
+        <option value="">All verdicts</option>
+      </select>
+      <select id="type-filter">
+        <option value="">All types</option>
+      </select>
+      <input id="claim-search" type="search" placeholder="Search claims" />
+    </div>
     <div id="claims"></div>
   </section>
 </main>
@@ -130,6 +155,7 @@
 const params = new URLSearchParams(window.location.search);
 const handle = (params.get('handle') || '').toLowerCase();
 const fmt = value => value === undefined || value === null || value === '' ? 'N/A' : value;
+let profileClaims = [];
 
 function metric(label, value) {
   return `<div class="metric"><span>${label}</span><strong>${fmt(value)}</strong></div>`;
@@ -155,6 +181,32 @@ function renderClaims(claims) {
     </table>`;
 }
 
+function populateClaimFilters(claims) {
+  const verdicts = [...new Set(claims.map(claim => claim.verdict).filter(Boolean))].sort();
+  const types = [...new Set(claims.map(claim => claim.claim_type).filter(Boolean))].sort();
+  document.getElementById('verdict-filter').insertAdjacentHTML(
+    'beforeend',
+    verdicts.map(v => `<option value="${v}">${v}</option>`).join('')
+  );
+  document.getElementById('type-filter').insertAdjacentHTML(
+    'beforeend',
+    types.map(t => `<option value="${t}">${t}</option>`).join('')
+  );
+}
+
+function applyClaimFilters() {
+  const verdict = document.getElementById('verdict-filter').value;
+  const type = document.getElementById('type-filter').value;
+  const search = document.getElementById('claim-search').value.trim().toLowerCase();
+  const filtered = profileClaims.filter(claim => {
+    const matchesVerdict = !verdict || claim.verdict === verdict;
+    const matchesType = !type || claim.claim_type === type;
+    const matchesSearch = !search || (claim.claim_text || '').toLowerCase().includes(search);
+    return matchesVerdict && matchesType && matchesSearch;
+  });
+  document.getElementById('claims').innerHTML = renderClaims(filtered);
+}
+
 Promise.all([
   fetch('data/scores.json').then(r => r.json()),
   fetch('data/claims.json').then(r => r.ok ? r.json() : { claims: [] }).catch(() => ({ claims: [] })),
@@ -168,8 +220,9 @@ Promise.all([
     return;
   }
 
-  const profileClaims = (claimData.claims || [])
+  profileClaims = (claimData.claims || [])
     .filter(claim => claim.handle.toLowerCase() === handle);
+  populateClaimFilters(profileClaims);
 
   document.title = `${journalist.name || journalist.handle} | SourceRank`;
   document.getElementById('title').textContent = journalist.name || `@${journalist.handle}`;
@@ -183,7 +236,11 @@ Promise.all([
     metric('Confirmed', journalist.confirmed),
     metric('Refuted', journalist.refuted),
   ].join('');
-  document.getElementById('claims').innerHTML = renderClaims(profileClaims);
+  applyClaimFilters();
+});
+
+['verdict-filter', 'type-filter', 'claim-search'].forEach(id => {
+  document.getElementById(id).addEventListener('input', applyClaimFilters);
 });
 </script>
 </body>

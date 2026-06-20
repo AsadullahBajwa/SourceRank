@@ -36,10 +36,9 @@ Completed:
 
 Next actions:
 
-1. Add claim filtering on profile pages.
-2. Add a compact methodology diagram to the site itself.
-3. Add better empty states for journalists with no claims.
-4. Add direct links from dispute workflow to GitHub Issues.
+1. Add a compact methodology diagram to the site itself.
+2. Add better empty states for journalists with no claims.
+3. Add direct links from dispute workflow to GitHub Issues.
 
 ## Phase 4 - Browser Extension
 
