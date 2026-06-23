@@ -73,5 +73,7 @@ Current CI runs:
 
 - Python compilation across core scripts.
 - `python -m unittest discover -s tests -v`.
+- `python scripts/rss_check.py` for source registry shape and dead host checks.
 - `python scripts/site_check.py` for static site pages and JSON artifacts.
+- `python scripts/extension_check.py` for Manifest V3 scaffold checks.
 - Local `.html` links between static site pages.

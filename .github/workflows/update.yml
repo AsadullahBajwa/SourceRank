@@ -28,6 +28,9 @@ jobs:
       - name: Run regression tests
         run: python -m unittest discover -s tests -v
 
+      - name: Validate RSS source registry
+        run: python scripts/rss_check.py
+
       - name: Validate static site artifacts
         run: python scripts/site_check.py
 

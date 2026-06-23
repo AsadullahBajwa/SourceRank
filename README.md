@@ -374,13 +374,17 @@ python scripts/source_coverage.py
 python scripts/source_coverage.py --json
 
 # Check local DB and leaderboard health
+python scripts/pipeline_health.py
+python scripts/pipeline_health.py --json
 python scheduler.py --status
 python scheduler.py --status --json
 python scheduler.py --from-step extract --through-step score --dry-run
 
 # Run the regression suite
 python -m unittest discover -s tests -v
+python scripts/rss_check.py
 python scripts/site_check.py
+python scripts/extension_check.py
 
 # Refresh RSS feeds; fetch health is stored in claims.db/feed_fetch_log
 python scrapers/news_scraper.py
@@ -411,6 +415,8 @@ python pipeline/scorer.py --dry-run --min-resolved 5
 ---
 
 ## Operations and Deployment
+
+For a pre-push checklist, see [`docs/OPERATIONS_CHECKLIST.md`](docs/OPERATIONS_CHECKLIST.md).
 
 ```mermaid
 flowchart TD
