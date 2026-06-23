@@ -23,6 +23,7 @@ from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates
 from scripts.coverage_plan import missing_active_handles
 from scripts.extension_check import missing_extension_files, validate_manifest
+from scripts.pipeline_health import count_csv_rows, latest_snapshot, sqlite_count
 from scripts.rss_check import validate_source_rows
 from scripts.source_coverage import build_source_report
 from scripts.site_check import missing_site_files, validate_local_links
@@ -395,6 +396,24 @@ class RssCheckTests(unittest.TestCase):
         self.assertTrue(any("duplicates source name" in error for error in errors))
         self.assertTrue(any("invalid URL" in error for error in errors))
         self.assertTrue(any("invalid tier" in error for error in errors))
+
+
+class PipelineHealthTests(unittest.TestCase):
+    def test_count_csv_rows_counts_data_rows_only(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "rows.csv")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("name,value\nalpha,1\nbeta,2\n")
+            self.assertEqual(count_csv_rows(path), 2)
+
+    def test_sqlite_count_handles_missing_database(self):
+        self.assertIsNone(sqlite_count(os.path.join("missing", "db.sqlite"), "tweets"))
+
+    def test_latest_snapshot_reads_index(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(os.path.join(tmpdir, "index.json"), "w", encoding="utf-8") as f:
+                f.write('{"latest": "scores_2026-06-16.json"}')
+            self.assertEqual(latest_snapshot(tmpdir), "scores_2026-06-16.json")
 
 
 class SiteCheckTests(unittest.TestCase):
