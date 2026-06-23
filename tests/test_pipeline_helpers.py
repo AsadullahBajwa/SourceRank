@@ -23,6 +23,7 @@ from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates
 from scripts.coverage_plan import missing_active_handles
 from scripts.extension_check import missing_extension_files, validate_manifest
+from scripts.rss_check import validate_source_rows
 from scripts.source_coverage import build_source_report
 from scripts.site_check import missing_site_files, validate_local_links
 from time_utils import parse_utc
@@ -359,6 +360,41 @@ class NewsScraperTests(unittest.TestCase):
         ])
         self.assertEqual(report["total_sources"], 3)
         self.assertEqual(report["tier1_by_country"], {"Pakistan": 1, "global": 1})
+
+
+class RssCheckTests(unittest.TestCase):
+    def test_validate_source_rows_accepts_clean_rows(self):
+        rows = [{
+            "name": "Reuters World",
+            "url": "https://news.google.com/rss/search?q=site:reuters.com",
+            "country": "global",
+            "language": "en",
+            "tier": "1",
+        }]
+        self.assertEqual(validate_source_rows(rows), [])
+
+    def test_validate_source_rows_flags_registry_problems(self):
+        rows = [
+            {
+                "name": "Reuters",
+                "url": "https://feeds.reuters.com/reuters/worldNews",
+                "country": "global",
+                "language": "en",
+                "tier": "1",
+            },
+            {
+                "name": "Reuters",
+                "url": "not-a-url",
+                "country": "global",
+                "language": "en",
+                "tier": "9",
+            },
+        ]
+        errors = validate_source_rows(rows)
+        self.assertTrue(any("dead RSS host" in error for error in errors))
+        self.assertTrue(any("duplicates source name" in error for error in errors))
+        self.assertTrue(any("invalid URL" in error for error in errors))
+        self.assertTrue(any("invalid tier" in error for error in errors))
 
 
 class SiteCheckTests(unittest.TestCase):
