@@ -22,6 +22,7 @@ from scheduler import _history_status, select_steps
 from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates
 from scripts.coverage_plan import missing_active_handles
+from scripts.extension_check import missing_extension_files, validate_manifest
 from scripts.source_coverage import build_source_report
 from scripts.site_check import missing_site_files, validate_local_links
 from time_utils import parse_utc
@@ -377,6 +378,41 @@ class SiteCheckTests(unittest.TestCase):
                     f.write('<a href="missing.html">Missing</a>' if name == "index.html" else "")
             errors = validate_local_links(tmpdir)
         self.assertEqual(errors, ["index.html links to missing local page: missing.html"])
+
+
+class ExtensionCheckTests(unittest.TestCase):
+    def test_missing_extension_files_reports_required_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(os.path.join(tmpdir, "manifest.json"), "w", encoding="utf-8") as f:
+                f.write("{}")
+            missing = missing_extension_files(tmpdir)
+        self.assertTrue(any(path.endswith("content.js") for path in missing))
+        self.assertTrue(any(path.endswith("popup.html") for path in missing))
+
+    def test_validate_manifest_accepts_current_manifest_shape(self):
+        manifest = {
+            "manifest_version": 3,
+            "name": "SourceRank Overlay",
+            "version": "0.1.0",
+            "permissions": ["storage"],
+            "content_scripts": [{"matches": ["https://x.com/*"], "js": ["content.js"]}],
+            "action": {"default_popup": "popup.html"},
+            "options_ui": {"page": "options.html"},
+        }
+        self.assertEqual(validate_manifest(manifest), [])
+
+    def test_validate_manifest_rejects_missing_storage_permission(self):
+        manifest = {
+            "manifest_version": 3,
+            "name": "SourceRank Overlay",
+            "version": "0.1.0",
+            "permissions": [],
+            "content_scripts": [{"matches": ["https://x.com/*"], "js": ["content.js"]}],
+            "action": {"default_popup": "popup.html"},
+            "options_ui": {"page": "options.html"},
+        }
+        errors = validate_manifest(manifest)
+        self.assertIn("manifest.json permissions must include storage", errors)
 
 
 if __name__ == "__main__":
