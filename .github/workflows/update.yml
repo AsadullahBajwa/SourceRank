@@ -30,3 +30,6 @@ jobs:
 
       - name: Validate static site artifacts
         run: python scripts/site_check.py
+
+      - name: Validate browser extension scaffold
+        run: python scripts/extension_check.py
