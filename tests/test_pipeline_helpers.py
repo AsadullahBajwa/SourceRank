@@ -28,6 +28,7 @@ from scripts.extension_check import missing_extension_files, validate_manifest
 from scripts.journalists_check import validate_journalist_rows
 from scripts.pipeline_health import count_csv_rows, latest_snapshot, sqlite_count
 from scripts.rss_check import validate_source_rows
+from scripts.snapshot_check import validate_history, validate_scores_payload
 from scripts.source_coverage import build_source_report
 from scripts.site_check import missing_site_files, validate_local_links
 from time_utils import parse_utc
@@ -495,6 +496,51 @@ class ConfigCheckTests(unittest.TestCase):
         self.assertTrue(any("OLLAMA_HOST" in error for error in errors))
         self.assertTrue(any("OLLAMA_NUM_PARALLEL" in error for error in errors))
         self.assertTrue(any("HISTORY_DIR" in error for error in errors))
+
+
+class SnapshotCheckTests(unittest.TestCase):
+    def valid_payload(self) -> dict:
+        return {
+            "generated_at": "2026-06-26T10:00:00",
+            "journalists": [
+                {
+                    "handle": "alpha",
+                    "score": 90.0,
+                    "eligible": True,
+                    "rank_status": "ranked",
+                    "total_claims": 5,
+                    "confirmed": 3,
+                    "refuted": 1,
+                    "pending": 1,
+                    "expired": 0,
+                    "resolved_claims": 4,
+                }
+            ],
+        }
+
+    def test_validate_scores_payload_accepts_consistent_counts(self):
+        self.assertEqual(validate_scores_payload(self.valid_payload()), [])
+
+    def test_validate_scores_payload_flags_duplicate_and_bad_resolved_count(self):
+        payload = self.valid_payload()
+        duplicate = dict(payload["journalists"][0])
+        duplicate["resolved_claims"] = 2
+        payload["journalists"].append(duplicate)
+        errors = validate_scores_payload(payload)
+        self.assertTrue(any("duplicates handle" in error for error in errors))
+        self.assertTrue(any("confirmed + refuted" in error for error in errors))
+
+    def test_validate_history_requires_latest_snapshot_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            history_dir = os.path.join(tmpdir, "history")
+            os.makedirs(history_dir)
+            with open(os.path.join(history_dir, "index.json"), "w", encoding="utf-8") as f:
+                f.write(
+                    '{"latest":"scores_2026-06-26.json",'
+                    '"snapshots":["scores_2026-06-26.json"]}'
+                )
+            errors = validate_history(tmpdir)
+        self.assertEqual(errors, ["Missing history snapshot: scores_2026-06-26.json"])
 
 
 class PipelineHealthTests(unittest.TestCase):
