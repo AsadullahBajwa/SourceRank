@@ -28,11 +28,20 @@ jobs:
       - name: Run regression tests
         run: python -m unittest discover -s tests -v
 
+      - name: Validate pipeline configuration
+        run: python scripts/config_check.py
+
+      - name: Validate journalist registry
+        run: python scripts/journalists_check.py
+
       - name: Validate RSS source registry
         run: python scripts/rss_check.py
 
       - name: Validate static site artifacts
         run: python scripts/site_check.py
+
+      - name: Validate public snapshots
+        run: python scripts/snapshot_check.py
 
       - name: Validate browser extension scaffold
         run: python scripts/extension_check.py
