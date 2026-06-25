@@ -403,6 +403,7 @@ python pipeline/claim_extractor.py --limit 500
 # Review weak or unresolved claims before trusting score movement
 python scripts/claim_review.py --limit 25
 python scripts/claim_review.py --verdict UNVERIFIED --json
+python scripts/claim_review.py --max-confidence 0.5 --csv > claim-review.csv
 
 # Verify claims in bounded batches, especially when Google News is enabled
 python pipeline/verifier.py --recheck --limit 100
@@ -410,6 +411,10 @@ python pipeline/verifier.py --recheck --limit 100
 # Refresh the public leaderboard artifact after local pipeline work
 python pipeline/scorer.py
 python pipeline/scorer.py --dry-run --min-resolved 5
+
+# Run every offline release check in one command
+python scheduler.py --preflight
+python scheduler.py --preflight --json
 ```
 
 ---
@@ -461,6 +466,7 @@ sequenceDiagram
 | GitHub Actions cannot access local secrets | CI validates; local machine refreshes data |
 | Long-running jobs | `--limit`, `--only-missing`, `--from-step`, `--through-step` controls |
 | Small current dataset | Registry audit and targeted backfill commands expose coverage gaps |
+| Malformed public artifacts | Preflight and CI validate registry, config, snapshots, site, and extension |
 
 ## Portfolio Talking Points
 
@@ -514,6 +520,8 @@ Detailed execution notes live in [`docs/PHASE_PLAN.md`](docs/PHASE_PLAN.md).
 - [x] Add RSS source depth audit by country, language, and tier
 - [ ] Improve country-specific RSS source depth
 - [x] Add claim review tools for false positive extraction audits
+- [x] Add spreadsheet-ready claim review export
+- [x] Add registry and snapshot integrity gates
 
 ### Phase 3 - Product Surface
 

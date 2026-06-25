@@ -17,7 +17,8 @@ Next actions:
 1. Run `python scripts/coverage_plan.py --limit 10`.
 2. Backfill a small batch with `python scrapers/tweet_scraper.py --only-missing --limit 5`.
 3. Process new tweets with `python pipeline/claim_extractor.py --limit 500`.
-4. Audit unresolved claims with `python scripts/claim_review.py --limit 25`.
+4. Export unresolved or low-confidence claims with
+   `python scripts/claim_review.py --max-confidence 0.5 --csv > claim-review.csv`.
 5. Re-run verification with `python pipeline/verifier.py --recheck --limit 100`.
 6. Refresh RSS source depth with `python scripts/source_coverage.py`.
 
@@ -73,7 +74,12 @@ Current CI runs:
 
 - Python compilation across core scripts.
 - `python -m unittest discover -s tests -v`.
+- `python scripts/config_check.py` for scoring, scrape, path, and Ollama settings.
+- `python scripts/journalists_check.py` for roster schema, uniqueness, and balance.
 - `python scripts/rss_check.py` for source registry shape and dead host checks.
 - `python scripts/site_check.py` for static site pages and JSON artifacts.
+- `python scripts/snapshot_check.py` for score invariants and history integrity.
 - `python scripts/extension_check.py` for Manifest V3 scaffold checks.
 - Local `.html` links between static site pages.
+
+Local operators can run the same release gate with `python scheduler.py --preflight`.
