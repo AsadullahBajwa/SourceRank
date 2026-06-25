@@ -3,6 +3,7 @@ import os
 import sqlite3
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 import config
@@ -21,6 +22,7 @@ from scrapers.tweet_scraper import select_journalists
 from scheduler import _history_status, select_steps
 from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates
+from scripts.config_check import validate_config
 from scripts.coverage_plan import missing_active_handles
 from scripts.extension_check import missing_extension_files, validate_manifest
 from scripts.journalists_check import validate_journalist_rows
@@ -444,6 +446,55 @@ class JournalistsCheckTests(unittest.TestCase):
         self.assertTrue(any("unsupported country" in error for error in errors))
         self.assertTrue(any("invalid followers_tier" in error for error in errors))
         self.assertTrue(any("invalid verified" in error for error in errors))
+
+
+class ConfigCheckTests(unittest.TestCase):
+    def valid_settings(self, base_dir: str) -> SimpleNamespace:
+        return SimpleNamespace(
+            SCORE_WEIGHTS={
+                "accuracy_rate": 0.4,
+                "prediction_score": 0.25,
+                "correction_behavior": 0.15,
+                "source_quality": 0.1,
+                "spam_index": 0.1,
+            },
+            VERIFICATION_WINDOWS={
+                "breaking": 7,
+                "prediction": 30,
+                "exclusive": 14,
+                "statistic": 30,
+                "general": 14,
+            },
+            INITIAL_SCRAPE_MONTHS=18,
+            SKIP_RECENT_DAYS=30,
+            QUICK_SKIP_MIN_WORDS=8,
+            MIN_RESOLVED_CLAIMS_FOR_RANKING=20,
+            OLLAMA_HOST="http://localhost:11434",
+            OLLAMA_MODEL="qwen2.5:7b",
+            OLLAMA_NUM_PARALLEL=4,
+            BASE_DIR=base_dir,
+            DATA_DIR=os.path.join(base_dir, "data"),
+            DB_DIR=os.path.join(base_dir, "data", "db"),
+            OUTPUT_DIR=os.path.join(base_dir, "output"),
+            HISTORY_DIR=os.path.join(base_dir, "output", "history"),
+        )
+
+    def test_validate_config_accepts_current_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.assertEqual(validate_config(self.valid_settings(tmpdir)), [])
+
+    def test_validate_config_flags_unsafe_values(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            settings = self.valid_settings(tmpdir)
+            settings.SCORE_WEIGHTS["accuracy_rate"] = 0.9
+            settings.OLLAMA_HOST = "localhost:11434"
+            settings.OLLAMA_NUM_PARALLEL = 0
+            settings.HISTORY_DIR = os.path.dirname(tmpdir)
+            errors = validate_config(settings)
+        self.assertTrue(any("sum to 1.0" in error for error in errors))
+        self.assertTrue(any("OLLAMA_HOST" in error for error in errors))
+        self.assertTrue(any("OLLAMA_NUM_PARALLEL" in error for error in errors))
+        self.assertTrue(any("HISTORY_DIR" in error for error in errors))
 
 
 class PipelineHealthTests(unittest.TestCase):
