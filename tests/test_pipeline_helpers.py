@@ -1,4 +1,5 @@
 import datetime
+import io
 import os
 import sqlite3
 import tempfile
@@ -21,7 +22,7 @@ from scrapers.news_scraper import select_sources
 from scrapers.tweet_scraper import select_journalists
 from scheduler import _history_status, select_steps
 from scripts.audit_registry import build_report
-from scripts.claim_review import review_candidates
+from scripts.claim_review import review_candidates, write_csv
 from scripts.config_check import validate_config
 from scripts.coverage_plan import missing_active_handles
 from scripts.extension_check import missing_extension_files, validate_manifest
@@ -320,6 +321,26 @@ class ClaimReviewTests(unittest.TestCase):
         rows = review_candidates(conn, ["UNVERIFIED"], limit=10)
         conn.close()
         self.assertEqual([row["id"] for row in rows], ["c1"])
+
+    def test_write_csv_preserves_claim_text_and_header(self):
+        stream = io.StringIO()
+        write_csv(
+            [{
+                "id": "c1",
+                "handle": "alpha",
+                "claim_text": "Inflation rose, according to the report",
+                "claim_type": "statistic",
+                "verdict": "UNVERIFIED",
+                "confidence": 0.4,
+                "verdict_source": "",
+                "verdict_url": "",
+                "tweet_created_at": "2026-06-01",
+            }],
+            stream,
+        )
+        output = stream.getvalue()
+        self.assertTrue(output.startswith("id,handle,claim_text"))
+        self.assertIn('"Inflation rose, according to the report"', output)
 
 
 class TweetScraperTests(unittest.TestCase):

@@ -9,6 +9,7 @@ Usage:
 """
 
 import argparse
+import csv
 import json
 import os
 import sqlite3
@@ -19,6 +20,17 @@ import config
 
 
 DEFAULT_VERDICTS = ["UNVERIFIED", "EXPIRED", "PENDING"]
+CSV_FIELDS = [
+    "id",
+    "handle",
+    "claim_text",
+    "claim_type",
+    "verdict",
+    "confidence",
+    "verdict_source",
+    "verdict_url",
+    "tweet_created_at",
+]
 
 
 def review_candidates(conn: sqlite3.Connection, verdicts: list[str],
@@ -59,6 +71,12 @@ def print_table(rows: list[dict]) -> None:
         )
 
 
+def write_csv(rows: list[dict], stream) -> None:
+    writer = csv.DictWriter(stream, fieldnames=CSV_FIELDS, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="List claims that deserve manual review.")
     parser.add_argument("--verdict", action="append", choices=["PENDING", "UNVERIFIED", "EXPIRED", "CONFIRMED", "REFUTED"],
@@ -66,7 +84,9 @@ def main() -> None:
     parser.add_argument("--max-confidence", type=float,
                         help="Also include claims at or below this confidence")
     parser.add_argument("--limit", type=int, default=50, help="Maximum rows to return")
-    parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    output_group.add_argument("--csv", action="store_true", help="Print spreadsheet-ready CSV")
     args = parser.parse_args()
 
     conn = sqlite3.connect(config.CLAIMS_DB)
@@ -80,6 +100,8 @@ def main() -> None:
 
     if args.json:
         print(json.dumps({"claims": rows}, indent=2))
+    elif args.csv:
+        write_csv(rows, sys.stdout)
     else:
         print_table(rows)
 
