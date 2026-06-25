@@ -14,6 +14,7 @@ Usage:
     python scheduler.py              # run full pipeline
     python scheduler.py --step news  # run one step only
     python scheduler.py --from-step extract --through-step score
+    python scheduler.py --preflight  # validate local configuration and artifacts
     python scheduler.py --dry-run    # print what would happen
 """
 
@@ -153,6 +154,44 @@ def print_status(as_json: bool = False) -> None:
         log.info(f"  {key}: {value}")
 
 
+def run_preflight_checks(checks=None) -> dict[str, list[str]]:
+    if checks is None:
+        import config
+        from scripts.config_check import validate_config
+        from scripts.extension_check import validate_extension
+        from scripts.journalists_check import validate_journalists_file
+        from scripts.rss_check import validate_sources_file
+        from scripts.site_check import validate_site
+        from scripts.snapshot_check import validate_public_snapshots
+
+        site_dir = os.path.join(config.BASE_DIR, "output", "site")
+        checks = [
+            ("configuration", lambda: validate_config(config)),
+            ("journalists", lambda: validate_journalists_file(config.JOURNALISTS_CSV)),
+            ("rss_sources", lambda: validate_sources_file(config.RSS_SOURCES_CSV)),
+            ("site", lambda: validate_site(site_dir, config.OUTPUT_DIR)),
+            ("snapshots", lambda: validate_public_snapshots(config.OUTPUT_DIR)),
+            ("extension", lambda: validate_extension(os.path.join(config.BASE_DIR, "extension"))),
+        ]
+    return {name: check() for name, check in checks}
+
+
+def print_preflight(as_json: bool = False) -> bool:
+    report = run_preflight_checks()
+    passed = not any(report.values())
+    if as_json:
+        print(json.dumps({"passed": passed, "checks": report}, indent=2))
+        return passed
+    for name, errors in report.items():
+        if errors:
+            log.error(f"Preflight {name}: FAILED")
+            for error in errors:
+                log.error(f"  {error}")
+        else:
+            log.info(f"Preflight {name}: passed")
+    return passed
+
+
 def run_step(name: str, cmd: list[str], dry_run: bool = False) -> bool:
     log.info(f"--- Step: {name.upper()} ---")
     if dry_run:
@@ -172,16 +211,27 @@ def main():
     parser.add_argument("--through-step", choices=STEP_ORDER, help="Stop after this step")
     parser.add_argument("--dry-run", action="store_true", help="Print steps without running")
     parser.add_argument("--status", action="store_true", help="Print local pipeline status and exit")
-    parser.add_argument("--json", action="store_true", help="Print --status output as JSON")
+    parser.add_argument("--preflight", action="store_true",
+                        help="Validate configuration and public artifacts, then exit")
+    parser.add_argument("--json", action="store_true",
+                        help="Print --status or --preflight output as JSON")
     args = parser.parse_args()
 
-    if args.json and not args.status:
-        parser.error("--json can only be used with --status")
+    if args.json and not (args.status or args.preflight):
+        parser.error("--json can only be used with --status or --preflight")
+    if args.status and args.preflight:
+        parser.error("--status and --preflight cannot be combined")
     if args.step and (args.from_step or args.through_step):
         parser.error("--step cannot be combined with --from-step or --through-step")
+    if (args.status or args.preflight) and (args.step or args.from_step or args.through_step):
+        parser.error("status and preflight modes cannot be combined with pipeline step selection")
 
     if args.status:
         print_status(as_json=args.json)
+        return
+    if args.preflight:
+        if not print_preflight(as_json=args.json):
+            raise SystemExit(1)
         return
 
     start = utc_now()

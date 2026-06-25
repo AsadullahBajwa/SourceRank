@@ -20,7 +20,7 @@ from pipeline.verifier import (
 )
 from scrapers.news_scraper import select_sources
 from scrapers.tweet_scraper import select_journalists
-from scheduler import _history_status, select_steps
+from scheduler import _history_status, run_preflight_checks, select_steps
 from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates, write_csv
 from scripts.config_check import validate_config
@@ -128,6 +128,16 @@ class SchedulerTests(unittest.TestCase):
 
         self.assertEqual(status["history_snapshots"], 1)
         self.assertEqual(status["latest_snapshot"], "scores_2026-06-01.json")
+
+    def test_run_preflight_checks_collects_named_errors(self):
+        report = run_preflight_checks([
+            ("passing", lambda: []),
+            ("failing", lambda: ["broken artifact"]),
+        ])
+        self.assertEqual(report, {
+            "passing": [],
+            "failing": ["broken artifact"],
+        })
 
 
 class VerifierTests(unittest.TestCase):
