@@ -23,6 +23,7 @@ from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates
 from scripts.coverage_plan import missing_active_handles
 from scripts.extension_check import missing_extension_files, validate_manifest
+from scripts.journalists_check import validate_journalist_rows
 from scripts.pipeline_health import count_csv_rows, latest_snapshot, sqlite_count
 from scripts.rss_check import validate_source_rows
 from scripts.source_coverage import build_source_report
@@ -396,6 +397,53 @@ class RssCheckTests(unittest.TestCase):
         self.assertTrue(any("duplicates source name" in error for error in errors))
         self.assertTrue(any("invalid URL" in error for error in errors))
         self.assertTrue(any("invalid tier" in error for error in errors))
+
+
+class JournalistsCheckTests(unittest.TestCase):
+    def test_validate_journalist_rows_accepts_balanced_registry(self):
+        rows = [
+            {
+                "handle": f"pk{index}",
+                "name": f"Pakistan Journalist {index}",
+                "beat": "Politics",
+                "country": "Pakistan",
+                "followers_tier": "medium",
+                "verified": "true",
+                "active": "true",
+            }
+            for index in range(50)
+        ]
+        rows.extend(
+            {
+                "handle": f"us{index}",
+                "name": f"US Journalist {index}",
+                "beat": "Politics",
+                "country": "US",
+                "followers_tier": "high",
+                "verified": "false",
+                "active": "true",
+            }
+            for index in range(50)
+        )
+        self.assertEqual(validate_journalist_rows(rows), [])
+
+    def test_validate_journalist_rows_flags_duplicate_and_invalid_values(self):
+        row = {
+            "handle": "bad-handle",
+            "name": "Example",
+            "beat": "Politics",
+            "country": "Canada",
+            "followers_tier": "huge",
+            "verified": "yes",
+            "active": "sometimes",
+        }
+        duplicate = dict(row, handle="BAD-HANDLE")
+        errors = validate_journalist_rows([row, duplicate], minimum_total=2)
+        self.assertTrue(any("invalid X handle" in error for error in errors))
+        self.assertTrue(any("duplicates handle" in error for error in errors))
+        self.assertTrue(any("unsupported country" in error for error in errors))
+        self.assertTrue(any("invalid followers_tier" in error for error in errors))
+        self.assertTrue(any("invalid verified" in error for error in errors))
 
 
 class PipelineHealthTests(unittest.TestCase):
