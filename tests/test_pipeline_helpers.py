@@ -13,9 +13,13 @@ from pipeline.claim_extractor import normalize_claim_type, normalize_confidence,
 from pipeline.scorer import compute_source_quality, public_claim_record, score_journalist
 from pipeline.verifier import (
     VERDICT_REFUTED,
+    backfill_tweet_created_at,
+    claim_reference_date,
     determine_verdict,
     filter_relevant_articles,
     find_contradiction,
+    get_pending_claims,
+    migrate_claims_schema,
     parse_google_news_title,
 )
 from scrapers.news_scraper import select_sources
@@ -288,6 +292,89 @@ class VerifierTests(unittest.TestCase):
         self.assertEqual(verdict, VERDICT_REFUTED)
         self.assertEqual(source, "Reuters World")
         self.assertEqual(url, "https://example.test/reuters-denial")
+
+    def test_migrate_claims_schema_adds_legacy_columns(self):
+        conn = sqlite3.connect(":memory:")
+        conn.execute("""
+            CREATE TABLE claims (
+                id TEXT PRIMARY KEY,
+                tweet_id TEXT,
+                claim_text TEXT
+            )
+        """)
+        migrate_claims_schema(conn)
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(claims)")}
+        conn.close()
+        self.assertIn("tweet_created_at", columns)
+        self.assertIn("confidence", columns)
+
+    def test_backfill_tweet_created_at_reads_tweets_database(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tweets_db = os.path.join(tmpdir, "tweets.db")
+            tweets_conn = sqlite3.connect(tweets_db)
+            tweets_conn.execute("CREATE TABLE tweets (id TEXT, created_at TEXT)")
+            tweets_conn.execute(
+                "INSERT INTO tweets (id, created_at) VALUES (?, ?)",
+                ("t1", "2026-06-01T12:00:00"),
+            )
+            tweets_conn.commit()
+            tweets_conn.close()
+
+            claims_conn = sqlite3.connect(":memory:")
+            claims_conn.execute("""
+                CREATE TABLE claims (
+                    id TEXT,
+                    tweet_id TEXT,
+                    tweet_created_at TEXT
+                )
+            """)
+            claims_conn.execute(
+                "INSERT INTO claims (id, tweet_id, tweet_created_at) VALUES (?, ?, ?)",
+                ("c1", "t1", ""),
+            )
+            with mock.patch.object(config, "TWEETS_DB", tweets_db):
+                backfill_tweet_created_at(claims_conn)
+            created_at = claims_conn.execute(
+                "SELECT tweet_created_at FROM claims WHERE id = 'c1'"
+            ).fetchone()[0]
+            claims_conn.close()
+
+        self.assertEqual(created_at, "2026-06-01T12:00:00")
+
+    def test_claim_reference_date_prefers_tweet_timestamp(self):
+        self.assertEqual(
+            claim_reference_date({
+                "tweet_created_at": "2026-06-01T12:00:00",
+                "extracted_at": "2026-06-03T12:00:00",
+            }),
+            "2026-06-01T12:00:00",
+        )
+
+    def test_get_pending_claims_recheck_includes_unverified_and_expired(self):
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("""
+            CREATE TABLE claims (
+                id TEXT,
+                handle TEXT,
+                verdict TEXT
+            )
+        """)
+        conn.executemany(
+            "INSERT INTO claims (id, handle, verdict) VALUES (?, ?, ?)",
+            [
+                ("c1", "alpha", "PENDING"),
+                ("c2", "alpha", "UNVERIFIED"),
+                ("c3", "alpha", "EXPIRED"),
+                ("c4", "alpha", "CONFIRMED"),
+                ("c5", "beta", "PENDING"),
+            ],
+        )
+        pending_only = get_pending_claims("alpha", conn)
+        recheck = get_pending_claims("alpha", conn, recheck=True)
+        conn.close()
+        self.assertEqual([row["id"] for row in pending_only], ["c1"])
+        self.assertEqual([row["id"] for row in recheck], ["c1", "c2", "c3"])
 
 
 class FindHandlesTests(unittest.TestCase):
