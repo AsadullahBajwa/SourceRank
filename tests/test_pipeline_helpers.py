@@ -1,5 +1,6 @@
 import datetime
 import io
+import json
 import os
 import sqlite3
 import tempfile
@@ -24,7 +25,7 @@ from pipeline.verifier import (
 )
 from scrapers.news_scraper import select_sources
 from scrapers.tweet_scraper import select_journalists
-from scheduler import _history_status, run_preflight_checks, select_steps
+from scheduler import _history_status, print_preflight, run_preflight_checks, run_step, select_steps
 from scripts.audit_registry import build_report
 from scripts.claim_review import review_candidates, write_csv
 from scripts.config_check import validate_config
@@ -142,6 +143,26 @@ class SchedulerTests(unittest.TestCase):
             "passing": [],
             "failing": ["broken artifact"],
         })
+
+    def test_run_step_dry_run_does_not_spawn_process(self):
+        with mock.patch("scheduler.subprocess.run") as run:
+            self.assertTrue(run_step("news", ["python", "news_scraper.py"], dry_run=True))
+        run.assert_not_called()
+
+    def test_run_step_reports_subprocess_failure(self):
+        completed = SimpleNamespace(returncode=2)
+        with mock.patch("scheduler.subprocess.run", return_value=completed):
+            self.assertFalse(run_step("news", ["python", "news_scraper.py"]))
+
+    def test_print_preflight_json_returns_pass_status(self):
+        with mock.patch("scheduler.run_preflight_checks", return_value={"ok": [], "bad": ["broken"]}):
+            stream = io.StringIO()
+            with mock.patch("sys.stdout", stream):
+                passed = print_preflight(as_json=True)
+        payload = json.loads(stream.getvalue())
+        self.assertFalse(passed)
+        self.assertFalse(payload["passed"])
+        self.assertEqual(payload["checks"]["bad"], ["broken"])
 
 
 class VerifierTests(unittest.TestCase):
