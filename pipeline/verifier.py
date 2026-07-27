@@ -331,6 +331,27 @@ def find_contradiction(claim_text: str, articles: list[dict]) -> dict | None:
     return None
 
 
+def find_tier1_match(articles: list[dict]) -> dict | None:
+    """Return the first article from a configured tier-1 source."""
+    for article in articles:
+        if article.get("source_name", "") in TIER1_SOURCES:
+            return article
+    return None
+
+
+def find_tier1_contradiction(claim_text: str, articles: list[dict]) -> dict | None:
+    """Return a tier-1 contradiction even when weaker matches appear first."""
+    contradiction = find_contradiction(claim_text, articles)
+    if not contradiction:
+        return None
+    for article in articles:
+        if article.get("source_name", "") not in TIER1_SOURCES:
+            continue
+        if find_contradiction(claim_text, [article]):
+            return article
+    return contradiction
+
+
 # ---------------------------------------------------------------------------
 # Verdict logic
 # ---------------------------------------------------------------------------
@@ -353,7 +374,7 @@ def determine_verdict(claim: sqlite3.Row,
 
     # Contradiction check — REFUTED if tier-1 source confirms the contradiction,
     # UNVERIFIED if only lower-tier sources carry the refuting story.
-    contradiction = find_contradiction(claim["claim_text"], all_matches)
+    contradiction = find_tier1_contradiction(claim["claim_text"], all_matches)
     if contradiction:
         contradiction_source = contradiction.get("source_name", "")
         contradiction_url = contradiction.get("url", "")
@@ -362,12 +383,13 @@ def determine_verdict(claim: sqlite3.Row,
         return VERDICT_UNVERIFIED, contradiction_source, contradiction_url
 
     # Tier-1 source → CONFIRMED
-    if source in TIER1_SOURCES and google_matches:
-        return VERDICT_CONFIRMED, source, url
-
-    # Local tier-1 match
-    if source in TIER1_SOURCES and local_matches:
-        return VERDICT_CONFIRMED, source, url
+    tier1_match = find_tier1_match(all_matches)
+    if tier1_match:
+        return (
+            VERDICT_CONFIRMED,
+            tier1_match.get("source_name", ""),
+            tier1_match.get("url", ""),
+        )
 
     # 3+ sources corroborating → CONFIRMED
     if len(all_matches) >= 3:

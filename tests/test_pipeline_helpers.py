@@ -237,6 +237,58 @@ class VerifierTests(unittest.TestCase):
         self.assertEqual(source, "Reuters World")
         self.assertEqual(url, "https://example.test/refute")
 
+    def test_tier1_confirmation_does_not_depend_on_match_order(self):
+        claim = {
+            "claim_text": "The minister will resign",
+            "verification_window": 7,
+            "tweet_created_at": "2026-06-01T00:00:00",
+            "extracted_at": "2026-06-01T00:00:00",
+        }
+        verdict, source, url = determine_verdict(
+            claim,
+            [{
+                "source_name": "Local Blog",
+                "title": "Minister resignation rumors continue",
+                "summary": "",
+                "url": "https://example.test/blog",
+            }],
+            [{
+                "source_name": "Reuters",
+                "title": "Minister expected to resign",
+                "summary": "",
+                "url": "https://example.test/reuters",
+            }],
+        )
+        self.assertEqual(verdict, "CONFIRMED")
+        self.assertEqual(source, "Reuters")
+        self.assertEqual(url, "https://example.test/reuters")
+
+    def test_tier1_refutation_is_preferred_over_weak_refuting_match(self):
+        claim = {
+            "claim_text": "The minister will resign",
+            "verification_window": 7,
+            "tweet_created_at": "2026-06-01T00:00:00",
+            "extracted_at": "2026-06-01T00:00:00",
+        }
+        verdict, source, url = determine_verdict(
+            claim,
+            [{
+                "source_name": "Local Blog",
+                "title": "Minister denies resignation",
+                "summary": "",
+                "url": "https://example.test/blog-denial",
+            }],
+            [{
+                "source_name": "Reuters World",
+                "title": "Minister denies resignation",
+                "summary": "The minister says he has no plans to resign.",
+                "url": "https://example.test/reuters-denial",
+            }],
+        )
+        self.assertEqual(verdict, VERDICT_REFUTED)
+        self.assertEqual(source, "Reuters World")
+        self.assertEqual(url, "https://example.test/reuters-denial")
+
 
 class FindHandlesTests(unittest.TestCase):
     def test_zero_tweet_handles_uses_latest_scrape_only(self):
