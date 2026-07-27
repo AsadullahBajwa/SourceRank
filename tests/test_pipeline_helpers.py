@@ -35,7 +35,7 @@ from scripts.pipeline_health import count_csv_rows, latest_snapshot, sqlite_coun
 from scripts.rss_check import validate_source_rows
 from scripts.snapshot_check import validate_history, validate_scores_payload
 from scripts.source_coverage import build_source_report
-from scripts.site_check import missing_site_files, validate_local_links
+from scripts.site_check import missing_site_files, validate_local_links, validate_site
 from time_utils import parse_utc
 
 
@@ -618,6 +618,35 @@ class JournalistsCheckTests(unittest.TestCase):
         self.assertTrue(any("invalid followers_tier" in error for error in errors))
         self.assertTrue(any("invalid verified" in error for error in errors))
 
+    def test_validate_journalist_rows_warns_on_country_imbalance(self):
+        rows = [
+            {
+                "handle": f"pk{index}",
+                "name": f"Pakistan Journalist {index}",
+                "beat": "Politics",
+                "country": "Pakistan",
+                "followers_tier": "medium",
+                "verified": "true",
+                "active": "true",
+            }
+            for index in range(30)
+        ]
+        rows.extend(
+            {
+                "handle": f"us{index}",
+                "name": f"US Journalist {index}",
+                "beat": "Politics",
+                "country": "US",
+                "followers_tier": "high",
+                "verified": "false",
+                "active": "true",
+            }
+            for index in range(10)
+        )
+        errors = validate_journalist_rows(rows, minimum_total=40)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("country balance differs", errors[0])
+
 
 class ConfigCheckTests(unittest.TestCase):
     def valid_settings(self, base_dir: str) -> SimpleNamespace:
@@ -667,6 +696,15 @@ class ConfigCheckTests(unittest.TestCase):
         self.assertTrue(any("OLLAMA_NUM_PARALLEL" in error for error in errors))
         self.assertTrue(any("HISTORY_DIR" in error for error in errors))
 
+    def test_validate_config_flags_missing_expected_keys(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            settings = self.valid_settings(tmpdir)
+            settings.SCORE_WEIGHTS.pop("spam_index")
+            settings.VERIFICATION_WINDOWS.pop("breaking")
+            errors = validate_config(settings)
+        self.assertTrue(any("SCORE_WEIGHTS keys" in error for error in errors))
+        self.assertTrue(any("VERIFICATION_WINDOWS keys" in error for error in errors))
+
 
 class SnapshotCheckTests(unittest.TestCase):
     def valid_payload(self) -> dict:
@@ -699,6 +737,20 @@ class SnapshotCheckTests(unittest.TestCase):
         errors = validate_scores_payload(payload)
         self.assertTrue(any("duplicates handle" in error for error in errors))
         self.assertTrue(any("confirmed + refuted" in error for error in errors))
+
+    def test_validate_scores_payload_flags_unsorted_ranked_rows(self):
+        payload = self.valid_payload()
+        payload["journalists"].append(
+            dict(payload["journalists"][0], handle="beta", score=95.0)
+        )
+        errors = validate_scores_payload(payload)
+        self.assertEqual(errors, ["scores.json eligible journalists must be sorted by score descending"])
+
+    def test_validate_scores_payload_requires_boolean_eligible(self):
+        payload = self.valid_payload()
+        payload["journalists"][0]["eligible"] = "yes"
+        errors = validate_scores_payload(payload)
+        self.assertEqual(errors, ["scores.json journalist 1 eligible must be a boolean"])
 
     def test_validate_history_requires_latest_snapshot_file(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -748,6 +800,23 @@ class SiteCheckTests(unittest.TestCase):
                     f.write('<a href="missing.html">Missing</a>' if name == "index.html" else "")
             errors = validate_local_links(tmpdir)
         self.assertEqual(errors, ["index.html links to missing local page: missing.html"])
+
+    def test_validate_site_accepts_required_files_and_query_links(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            site_dir = os.path.join(tmpdir, "site")
+            data_dir = os.path.join(site_dir, "data")
+            history_dir = os.path.join(data_dir, "history")
+            os.makedirs(history_dir)
+            for name in ["index.html", "journalist.html", "trends.html", "coverage.html", "methodology.html", "dispute.html"]:
+                with open(os.path.join(site_dir, name), "w", encoding="utf-8") as f:
+                    f.write('<a href="journalist.html?handle=alpha">Alpha</a>' if name == "index.html" else "")
+            with open(os.path.join(data_dir, "scores.json"), "w", encoding="utf-8") as f:
+                f.write('{"journalists":[]}')
+            with open(os.path.join(data_dir, "claims.json"), "w", encoding="utf-8") as f:
+                f.write('{"claims":[]}')
+            with open(os.path.join(history_dir, "index.json"), "w", encoding="utf-8") as f:
+                f.write('{"snapshots":[]}')
+            self.assertEqual(validate_site(site_dir, data_dir), [])
 
 
 class ExtensionCheckTests(unittest.TestCase):
