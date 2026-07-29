@@ -68,16 +68,13 @@ def validate_scores_payload(payload: dict, label: str = "scores.json") -> list[s
                 errors.append(
                     f"{prefix} resolved_claims must equal confirmed + refuted"
                 )
-        if all(
-            isinstance(row.get(field), int)
-            for field in ("confirmed", "refuted", "pending", "expired", "total_claims")
-        ):
-            expected_total = (
+        if all(isinstance(row.get(field), int) for field in COUNT_FIELDS):
+            published_verdict_total = (
                 row["confirmed"] + row["refuted"] + row["pending"] + row["expired"]
             )
-            if row["total_claims"] != expected_total:
+            if published_verdict_total > row["total_claims"]:
                 errors.append(
-                    f"{prefix} total_claims must equal confirmed + refuted + pending + expired"
+                    f"{prefix} published verdict counts cannot exceed total_claims"
                 )
 
         eligible = row.get("eligible")

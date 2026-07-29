@@ -807,17 +807,16 @@ class SnapshotCheckTests(unittest.TestCase):
         errors = validate_scores_payload(payload)
         self.assertEqual(errors, ["scores.json journalist 1 eligible must be a boolean"])
 
-    def test_validate_scores_payload_flags_bad_total_claim_count(self):
+    def test_validate_scores_payload_allows_unpublished_unverified_count(self):
         payload = self.valid_payload()
-        payload["journalists"][0]["total_claims"] = 99
+        payload["journalists"][0]["total_claims"] = 8
+        self.assertEqual(validate_scores_payload(payload), [])
+
+    def test_validate_scores_payload_flags_verdict_counts_above_total(self):
+        payload = self.valid_payload()
+        payload["journalists"][0]["total_claims"] = 3
         errors = validate_scores_payload(payload)
-        self.assertEqual(
-            errors,
-            [
-                "scores.json journalist 1 total_claims must equal "
-                "confirmed + refuted + pending + expired"
-            ],
-        )
+        self.assertEqual(errors, ["scores.json journalist 1 published verdict counts cannot exceed total_claims"])
 
     def test_validate_history_requires_latest_snapshot_file(self):
         with tempfile.TemporaryDirectory() as tmpdir:
