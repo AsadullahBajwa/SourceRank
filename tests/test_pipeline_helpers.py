@@ -807,6 +807,18 @@ class SnapshotCheckTests(unittest.TestCase):
         errors = validate_scores_payload(payload)
         self.assertEqual(errors, ["scores.json journalist 1 eligible must be a boolean"])
 
+    def test_validate_scores_payload_flags_bad_total_claim_count(self):
+        payload = self.valid_payload()
+        payload["journalists"][0]["total_claims"] = 99
+        errors = validate_scores_payload(payload)
+        self.assertEqual(
+            errors,
+            [
+                "scores.json journalist 1 total_claims must equal "
+                "confirmed + refuted + pending + expired"
+            ],
+        )
+
     def test_validate_history_requires_latest_snapshot_file(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             history_dir = os.path.join(tmpdir, "history")
