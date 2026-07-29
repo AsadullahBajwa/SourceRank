@@ -26,7 +26,7 @@ from pipeline.verifier import (
 from scrapers.news_scraper import select_sources
 from scrapers.tweet_scraper import select_journalists
 from scheduler import _history_status, print_preflight, run_preflight_checks, run_step, select_steps
-from scripts.audit_registry import build_report
+from scripts.audit_registry import build_report, normalized_handle, row_is_active
 from scripts.claim_review import review_candidates, write_csv
 from scripts.config_check import validate_config
 from scripts.coverage_plan import missing_active_handles
@@ -459,6 +459,29 @@ class RegistryAuditTests(unittest.TestCase):
             limit=1,
         )
         self.assertEqual(handles, ["beta"])
+
+    def test_registry_helpers_normalize_whitespace_and_case(self):
+        row = {"handle": " Alpha ", "active": " TRUE "}
+        self.assertTrue(row_is_active(row))
+        self.assertEqual(normalized_handle(row), "alpha")
+
+    def test_build_report_uses_normalized_active_flags_and_handles(self):
+        rows = [
+            {"handle": " Alpha ", "name": "Alpha Example", "country": "US", "active": " TRUE "},
+            {"handle": "Beta", "name": "Beta Example", "country": "Pakistan", "active": " false "},
+        ]
+        report = build_report(rows, {"alpha": 4})
+        self.assertEqual(report["active"], 1)
+        self.assertEqual(report["inactive"], 1)
+        self.assertEqual(report["active_with_tweets"], 1)
+
+    def test_missing_active_handles_uses_normalized_handles(self):
+        rows = [
+            {"handle": " Alpha ", "country": "US", "active": " TRUE "},
+            {"handle": "Beta", "country": "US", "active": " true "},
+        ]
+        handles = missing_active_handles(rows, {"alpha": 2}, country=" us ")
+        self.assertEqual(handles, ["Beta"])
 
 
 class ClaimReviewTests(unittest.TestCase):

@@ -21,6 +21,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 
 
+def row_is_active(row: dict) -> bool:
+    return row.get("active", "true").strip().lower() == "true"
+
+
+def normalized_handle(row: dict) -> str:
+    return row.get("handle", "").strip().lower()
+
+
 def load_rows() -> list[dict]:
     with open(config.JOURNALISTS_CSV, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
@@ -40,9 +48,9 @@ def load_tweet_counts() -> dict[str, int]:
 def duplicate_names(rows: list[dict], active_only: bool = False) -> dict[str, list[str]]:
     handles_by_name: dict[str, list[str]] = defaultdict(list)
     for row in rows:
-        if active_only and row.get("active", "true").lower() != "true":
+        if active_only and not row_is_active(row):
             continue
-        handles_by_name[row["name"]].append(row["handle"])
+        handles_by_name[row["name"].strip()].append(row["handle"].strip())
     return {
         name: handles
         for name, handles in handles_by_name.items()
@@ -51,13 +59,13 @@ def duplicate_names(rows: list[dict], active_only: bool = False) -> dict[str, li
 
 
 def build_report(rows: list[dict], tweet_counts: dict[str, int]) -> dict:
-    active = [row for row in rows if row.get("active", "true").lower() == "true"]
+    active = [row for row in rows if row_is_active(row)]
     active_by_country = Counter(row["country"] for row in active)
     inactive_by_country = Counter(row["country"] for row in rows if row not in active)
     active_without_rows = [
-        row for row in active if tweet_counts.get(row["handle"].lower(), 0) == 0
+        row for row in active if tweet_counts.get(normalized_handle(row), 0) == 0
     ]
-    active_without_tweets = [row["handle"] for row in active_without_rows]
+    active_without_tweets = [row["handle"].strip() for row in active_without_rows]
     active_with_tweets = len(active) - len(active_without_tweets)
     active_without_by_country = Counter(row["country"] for row in active_without_rows)
     return {

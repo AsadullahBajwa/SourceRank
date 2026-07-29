@@ -14,17 +14,19 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.audit_registry import load_rows, load_tweet_counts
+from scripts.audit_registry import normalized_handle, row_is_active
 
 
 def missing_active_handles(rows: list[dict], tweet_counts: dict[str, int],
                            country: str | None = None,
                            limit: int | None = None) -> list[str]:
+    country_filter = country.strip().lower() if country else None
     missing = [
-        row["handle"]
+        row["handle"].strip()
         for row in rows
-        if row.get("active", "true").lower() == "true"
-        and (not country or row.get("country", "").lower() == country.lower())
-        and tweet_counts.get(row["handle"].lower(), 0) == 0
+        if row_is_active(row)
+        and (not country_filter or row.get("country", "").strip().lower() == country_filter)
+        and tweet_counts.get(normalized_handle(row), 0) == 0
     ]
     missing = sorted(missing, key=str.lower)
     return missing[:limit] if limit and limit > 0 else missing
