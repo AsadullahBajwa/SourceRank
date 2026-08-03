@@ -37,6 +37,7 @@ from scripts.rss_check import validate_source_rows
 from scripts.snapshot_check import validate_history, validate_scores_payload
 from scripts.source_coverage import build_source_report
 from scripts.site_check import missing_site_files, validate_local_links, validate_site
+from scripts.source_taxonomy import is_valid_category, normalize_category
 from time_utils import parse_utc
 
 
@@ -570,6 +571,12 @@ class NewsScraperTests(unittest.TestCase):
         ]
         selected = select_sources(sources, country="Pakistan", tier=1, limit=1)
         self.assertEqual([source["name"] for source in selected], ["Dawn"])
+
+    def test_source_taxonomy_normalizes_category_names(self):
+        self.assertEqual(normalize_category("Public Broadcaster"), "public_broadcaster")
+        self.assertEqual(normalize_category("digital-native"), "digital_native")
+        self.assertTrue(is_valid_category("Nonprofit Investigative"))
+        self.assertFalse(is_valid_category("influencer"))
 
     def test_build_source_report_counts_tiers_and_countries(self):
         report = build_source_report([
