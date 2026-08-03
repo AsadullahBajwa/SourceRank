@@ -580,23 +580,26 @@ class NewsScraperTests(unittest.TestCase):
 
     def test_build_source_report_counts_tiers_and_countries(self):
         report = build_source_report([
-            {"country": "global", "language": "en", "tier": "1"},
-            {"country": "Pakistan", "language": "en", "tier": "1"},
-            {"country": "Pakistan", "language": "ur", "tier": "2"},
+            {"country": "global", "language": "en", "tier": "1", "category": "wire"},
+            {"country": "Pakistan", "language": "en", "tier": "1", "category": "newspaper"},
+            {"country": "Pakistan", "language": "ur", "tier": "2", "category": "tv"},
         ])
         self.assertEqual(report["total_sources"], 3)
         self.assertEqual(report["tier1_by_country"], {"Pakistan": 1, "global": 1})
         self.assertEqual(report["tier1_missing_countries"], ["US"])
         self.assertEqual(report["languages_by_country"]["Pakistan"], ["en", "ur"])
+        self.assertEqual(report["by_category"], {"newspaper": 1, "tv": 1, "wire": 1})
+        self.assertEqual(report["categories_by_country"]["Pakistan"], ["newspaper", "tv"])
 
     def test_build_source_report_normalizes_blank_values(self):
         report = build_source_report([
-            {"country": " Pakistan ", "language": " en ", "tier": " 1 "},
-            {"country": "", "language": "", "tier": ""},
+            {"country": " Pakistan ", "language": " en ", "tier": " 1 ", "category": " Public Broadcaster "},
+            {"country": "", "language": "", "tier": "", "category": ""},
         ])
         self.assertEqual(report["by_country"], {"Pakistan": 1, "unknown": 1})
         self.assertEqual(report["by_language"], {"en": 1, "unknown": 1})
         self.assertEqual(report["by_tier"], {"1": 1, "unknown": 1})
+        self.assertEqual(report["by_category"], {"public_broadcaster": 1, "unknown": 1})
 
 
 class RssCheckTests(unittest.TestCase):
