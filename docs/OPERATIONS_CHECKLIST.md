@@ -35,10 +35,16 @@ python -m unittest discover -s tests -v
 These checks do not scrape X, call Ollama, or hit paid APIs. They are safe to
 run in CI and before every push.
 
+RSS source categories must stay within the shared taxonomy:
+`wire`, `public_broadcaster`, `newspaper`, `digital_native`,
+`nonprofit_investigative`, `tv`, `radio`, and `regional`.
+
 ## Data Refresh Loop
 
 ```bash
 python scrapers/news_scraper.py
+python scrapers/news_scraper.py --category wire --dry-run
+python scrapers/news_scraper.py --category public_broadcaster --limit 5 --dry-run
 python scripts/coverage_plan.py --limit 10
 python scrapers/tweet_scraper.py --only-missing --limit 5
 OLLAMA_NUM_PARALLEL=4 python pipeline/claim_extractor.py --limit 500

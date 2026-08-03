@@ -65,7 +65,7 @@ Each original tweet is analyzed for checkable factual claims. The extractor uses
 
 ### 4. Verification
 
-Extracted claims are cross-checked against a local RSS article corpus, FTS5 search, tier-one source rules, contradiction patterns, and Google News RSS fallback queries.
+Extracted claims are cross-checked against a local RSS article corpus, FTS5 search, tier-one source rules, contradiction patterns, and Google News RSS fallback queries. RSS sources are tagged by category so the corpus can be audited across wires, public broadcasters, newspapers, digital-native outlets, nonprofit investigative outlets, TV, radio, and regional sources.
 
 ### 5. Scoring
 
@@ -276,6 +276,7 @@ erDiagram
         text id PK
         text source_name
         text country
+        text source_category
         text title
         text summary
         text url
@@ -305,7 +306,7 @@ erDiagram
 | `scrape_windows` | `tweets.db` | Monthly scrape window checkpointing |
 | `claims` | `claims.db` | Extracted claims, verdicts, confidence, source links |
 | `processed_tweets` | `claims.db` | Idempotency flag for claim extraction |
-| `articles` | `claims.db` | RSS article corpus used for verification |
+| `articles` | `claims.db` | RSS article corpus used for verification, including source category |
 | `articles_fts` | `claims.db` | FTS5 index over article title and summary |
 | `feed_fetch_log` | `claims.db` | RSS health and freshness log |
 
@@ -317,7 +318,7 @@ erDiagram
 source-ranker/
 |-- data/
 |   |-- journalists.csv          # curated journalist registry
-|   |-- rss_sources.csv          # verification news sources
+|   |-- rss_sources.csv          # verification news sources with category tags
 |   `-- db/
 |       |-- tweets.db            # scraped tweets
 |       `-- claims.db            # claims, verdicts, article corpus
@@ -389,6 +390,8 @@ python scripts/extension_check.py
 # Refresh RSS feeds; fetch health is stored in claims.db/feed_fetch_log
 python scrapers/news_scraper.py
 python scrapers/news_scraper.py --tier 1 --limit 5 --dry-run
+python scrapers/news_scraper.py --category wire --dry-run
+python scrapers/news_scraper.py --category public_broadcaster --limit 5 --dry-run
 
 # Backfill active journalists that still have no local tweets
 python scripts/coverage_plan.py --limit 10

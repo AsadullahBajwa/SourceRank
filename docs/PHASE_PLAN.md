@@ -9,7 +9,7 @@ Goal: expand from a small proof-of-concept dataset to enough tweet and claim cov
 Current blockers:
 
 - Only a minority of active handles have local tweets.
-- RSS source depth is uneven across countries.
+- RSS source depth is uneven across countries and source categories.
 - Some extracted claims need manual review before score movement is trusted.
 
 Next actions:
@@ -21,6 +21,8 @@ Next actions:
    `python scripts/claim_review.py --max-confidence 0.5 --csv > claim-review.csv`.
 5. Re-run verification with `python pipeline/verifier.py --recheck --limit 100`.
 6. Refresh RSS source depth with `python scripts/source_coverage.py`.
+7. Use category-targeted dry runs, for example
+   `python scrapers/news_scraper.py --category wire --dry-run`.
 
 ## Phase 3 - Product Surface
 
@@ -77,6 +79,7 @@ Current CI runs:
 - `python scripts/config_check.py` for scoring, scrape, path, and Ollama settings.
 - `python scripts/journalists_check.py` for roster schema, uniqueness, and balance.
 - `python scripts/rss_check.py` for source registry shape and dead host checks.
+- `python scripts/source_coverage.py --json` for country, tier, language, and category balance.
 - `python scripts/site_check.py` for static site pages and JSON artifacts.
 - `python scripts/snapshot_check.py` for score invariants and history integrity.
 - `python scripts/extension_check.py` for Manifest V3 scaffold checks.
