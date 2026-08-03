@@ -565,12 +565,21 @@ class TweetScraperTests(unittest.TestCase):
 class NewsScraperTests(unittest.TestCase):
     def test_select_sources_filters_country_tier_and_limit(self):
         sources = [
-            {"name": "Reuters", "country": "global", "tier": "1"},
-            {"name": "Dawn", "country": "Pakistan", "tier": "1"},
-            {"name": "Local", "country": "Pakistan", "tier": "2"},
+            {"name": "Reuters", "country": "global", "tier": "1", "category": "wire"},
+            {"name": "Dawn", "country": "Pakistan", "tier": "1", "category": "newspaper"},
+            {"name": "Local", "country": "Pakistan", "tier": "2", "category": "tv"},
         ]
         selected = select_sources(sources, country="Pakistan", tier=1, limit=1)
         self.assertEqual([source["name"] for source in selected], ["Dawn"])
+
+    def test_select_sources_filters_by_normalized_category(self):
+        sources = [
+            {"name": "Reuters", "country": "global", "tier": "1", "category": "wire"},
+            {"name": "BBC", "country": "global", "tier": "1", "category": "public_broadcaster"},
+            {"name": "Dawn", "country": "Pakistan", "tier": "1", "category": "newspaper"},
+        ]
+        selected = select_sources(sources, category="Public Broadcaster")
+        self.assertEqual([source["name"] for source in selected], ["BBC"])
 
     def test_source_taxonomy_normalizes_category_names(self):
         self.assertEqual(normalize_category("Public Broadcaster"), "public_broadcaster")

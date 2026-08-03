@@ -20,6 +20,7 @@ import hashlib
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from scripts.source_taxonomy import normalize_category
 from time_utils import utc_now_iso
 
 logging.basicConfig(
@@ -174,12 +175,19 @@ def load_sources(csv_path: str) -> list[dict]:
 
 
 def select_sources(sources: list[dict], country: str | None = None,
-                   tier: int | None = None, limit: int | None = None) -> list[dict]:
+                   tier: int | None = None, category: str | None = None,
+                   limit: int | None = None) -> list[dict]:
     selected = list(sources)
     if country:
         selected = [s for s in selected if s["country"].lower() == country.lower()]
     if tier:
         selected = [s for s in selected if int(s.get("tier", 99)) <= tier]
+    if category:
+        normalized = normalize_category(category)
+        selected = [
+            s for s in selected
+            if normalize_category(s.get("category", "")) == normalized
+        ]
     if limit is not None and limit > 0:
         selected = selected[:limit]
     return selected
@@ -193,6 +201,7 @@ def main():
     parser = argparse.ArgumentParser(description="Fetch RSS feeds into the news corpus.")
     parser.add_argument("--country", help="Filter by country code (e.g. US, Pakistan)")
     parser.add_argument("--tier", type=int, help="Filter by source tier (1 = top tier)")
+    parser.add_argument("--category", help="Filter by source category (e.g. wire, tv)")
     parser.add_argument("--limit", type=int, help="Maximum number of selected sources to fetch")
     parser.add_argument("--dry-run", action="store_true", help="Print selected sources without fetching")
     args = parser.parse_args()
@@ -201,12 +210,16 @@ def main():
         load_sources(config.RSS_SOURCES_CSV),
         country=args.country,
         tier=args.tier,
+        category=args.category,
         limit=args.limit,
     )
 
     if args.dry_run:
         for source in sources:
-            log.info(f"[DRY RUN] Would fetch {source['name']} ({source['country']}, tier {source['tier']})")
+            log.info(
+                f"[DRY RUN] Would fetch {source['name']} "
+                f"({source['country']}, tier {source['tier']}, {source.get('category', 'unknown')})"
+            )
         return
 
     conn = get_db(config.CLAIMS_DB)
