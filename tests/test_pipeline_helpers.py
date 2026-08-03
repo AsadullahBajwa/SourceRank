@@ -23,7 +23,7 @@ from pipeline.verifier import (
     migrate_claims_schema,
     parse_google_news_title,
 )
-from scrapers.news_scraper import select_sources
+from scrapers.news_scraper import get_db as get_news_db, migrate_articles_schema, select_sources
 from scrapers.tweet_scraper import select_journalists
 from scheduler import _history_status, print_preflight, run_preflight_checks, run_step, select_steps
 from scripts.audit_registry import build_report, normalized_handle, row_is_active
@@ -580,6 +580,33 @@ class NewsScraperTests(unittest.TestCase):
         ]
         selected = select_sources(sources, category="Public Broadcaster")
         self.assertEqual([source["name"] for source in selected], ["BBC"])
+
+    def test_news_database_includes_source_category_column(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = os.path.join(tmpdir, "claims.db")
+            conn = get_news_db(db_path)
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(articles)")}
+            conn.close()
+        self.assertIn("source_category", columns)
+
+    def test_news_database_migrates_legacy_articles_table(self):
+        conn = sqlite3.connect(":memory:")
+        conn.execute("""
+            CREATE TABLE articles (
+                id TEXT PRIMARY KEY,
+                source_name TEXT NOT NULL,
+                country TEXT,
+                title TEXT NOT NULL,
+                summary TEXT,
+                url TEXT,
+                published TEXT,
+                fetched_at TEXT NOT NULL
+            )
+        """)
+        migrate_articles_schema(conn)
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(articles)")}
+        conn.close()
+        self.assertIn("source_category", columns)
 
     def test_source_taxonomy_normalizes_category_names(self):
         self.assertEqual(normalize_category("Public Broadcaster"), "public_broadcaster")

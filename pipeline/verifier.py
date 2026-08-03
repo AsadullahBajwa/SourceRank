@@ -229,7 +229,7 @@ def search_local_corpus(claim_text: str, entities: list[str],
     try:
         rows = conn.execute(
             """
-            SELECT a.source_name, a.title, a.summary, a.url, a.published,
+            SELECT a.source_name, a.source_category, a.title, a.summary, a.url, a.published,
                    bm25(articles_fts) AS score
             FROM articles_fts
             JOIN articles a ON articles_fts.rowid = a.rowid

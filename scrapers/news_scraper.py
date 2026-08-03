@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS articles (
     id          TEXT PRIMARY KEY,
     source_name TEXT NOT NULL,
     country     TEXT,
+    source_category TEXT,
     title       TEXT NOT NULL,
     summary     TEXT,
     url         TEXT,
@@ -84,12 +85,21 @@ def get_db(path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute(CREATE_ARTICLES_TABLE)
+    migrate_articles_schema(conn)
     conn.execute(CREATE_FTS_TABLE)
     conn.execute(CREATE_FTS_TRIGGER_INSERT)
     conn.execute(CREATE_FTS_TRIGGER_DELETE)
     conn.execute(CREATE_FEED_FETCH_LOG_TABLE)
     conn.commit()
     return conn
+
+
+def migrate_articles_schema(conn: sqlite3.Connection) -> None:
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(articles)").fetchall()}
+    if "source_category" not in columns:
+        log.info("Adding missing articles column: source_category")
+        conn.execute("ALTER TABLE articles ADD COLUMN source_category TEXT")
+        conn.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -148,10 +158,20 @@ def fetch_feed(source: dict, conn: sqlite3.Connection) -> int:
             conn.execute(
                 """
                 INSERT OR IGNORE INTO articles
-                    (id, source_name, country, title, summary, url, published, fetched_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (id, source_name, country, source_category, title, summary, url, published, fetched_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (row_id, source["name"], source.get("country", ""), title, summary, url, published, fetched_at),
+                (
+                    row_id,
+                    source["name"],
+                    source.get("country", ""),
+                    normalize_category(source.get("category", "")),
+                    title,
+                    summary,
+                    url,
+                    published,
+                    fetched_at,
+                ),
             )
             if conn.execute("SELECT changes()").fetchone()[0]:
                 new_count += 1
