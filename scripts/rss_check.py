@@ -13,9 +13,10 @@ from urllib.parse import urlparse
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from scripts.source_taxonomy import is_valid_category, normalize_category
 
 
-REQUIRED_COLUMNS = ["name", "url", "country", "language", "tier"]
+REQUIRED_COLUMNS = ["name", "url", "country", "language", "tier", "category"]
 VALID_TIERS = {"1", "2", "3"}
 DEAD_HOSTS = {"feeds.reuters.com"}
 
@@ -52,6 +53,12 @@ def validate_source_rows(rows: list[dict]) -> list[str]:
         tier = row.get("tier", "").strip()
         if tier and tier not in VALID_TIERS:
             errors.append(f"Row {index} has invalid tier: {tier}")
+
+        category = row.get("category", "")
+        if category and not is_valid_category(category):
+            errors.append(
+                f"Row {index} has invalid category: {normalize_category(category)}"
+            )
 
     return errors
 

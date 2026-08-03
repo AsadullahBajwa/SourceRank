@@ -607,6 +607,7 @@ class RssCheckTests(unittest.TestCase):
             "country": "global",
             "language": "en",
             "tier": "1",
+            "category": "wire",
         }]
         self.assertEqual(validate_source_rows(rows), [])
 
@@ -618,6 +619,7 @@ class RssCheckTests(unittest.TestCase):
                 "country": "global",
                 "language": "en",
                 "tier": "1",
+                "category": "wire",
             },
             {
                 "name": "Reuters",
@@ -625,6 +627,7 @@ class RssCheckTests(unittest.TestCase):
                 "country": "global",
                 "language": "en",
                 "tier": "9",
+                "category": "blog",
             },
         ]
         errors = validate_source_rows(rows)
@@ -632,6 +635,7 @@ class RssCheckTests(unittest.TestCase):
         self.assertTrue(any("duplicates source name" in error for error in errors))
         self.assertTrue(any("invalid URL" in error for error in errors))
         self.assertTrue(any("invalid tier" in error for error in errors))
+        self.assertTrue(any("invalid category" in error for error in errors))
 
 
 class JournalistsCheckTests(unittest.TestCase):
