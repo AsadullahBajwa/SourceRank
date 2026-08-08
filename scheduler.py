@@ -161,6 +161,8 @@ def run_preflight_checks(checks=None) -> dict[str, list[str]]:
         from scripts.extension_check import validate_extension
         from scripts.journalists_check import validate_journalists_file
         from scripts.rss_check import validate_sources_file
+        from scripts.source_balance_check import validate_source_balance
+        from scripts.source_coverage import load_sources
         from scripts.site_check import validate_site
         from scripts.snapshot_check import validate_public_snapshots
 
@@ -169,6 +171,7 @@ def run_preflight_checks(checks=None) -> dict[str, list[str]]:
             ("configuration", lambda: validate_config(config)),
             ("journalists", lambda: validate_journalists_file(config.JOURNALISTS_CSV)),
             ("rss_sources", lambda: validate_sources_file(config.RSS_SOURCES_CSV)),
+            ("source_balance", lambda: validate_source_balance(load_sources(config.RSS_SOURCES_CSV))),
             ("site", lambda: validate_site(site_dir, config.OUTPUT_DIR)),
             ("snapshots", lambda: validate_public_snapshots(config.OUTPUT_DIR)),
             ("extension", lambda: validate_extension(os.path.join(config.BASE_DIR, "extension"))),

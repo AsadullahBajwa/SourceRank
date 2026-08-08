@@ -79,6 +79,7 @@ Current CI runs:
 - `python scripts/config_check.py` for scoring, scrape, path, and Ollama settings.
 - `python scripts/journalists_check.py` for roster schema, uniqueness, and balance.
 - `python scripts/rss_check.py` for source registry shape and dead host checks.
+- `python scripts/source_balance_check.py` for core RSS category and tier-1 country coverage.
 - `python scripts/source_coverage.py --json` for country, tier, language, and category balance.
 - `python scripts/site_check.py` for static site pages and JSON artifacts.
 - `python scripts/snapshot_check.py` for score invariants and history integrity.

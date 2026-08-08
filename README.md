@@ -384,6 +384,7 @@ python scheduler.py --from-step extract --through-step score --dry-run
 # Run the regression suite
 python -m unittest discover -s tests -v
 python scripts/rss_check.py
+python scripts/source_balance_check.py
 python scripts/site_check.py
 python scripts/extension_check.py
 

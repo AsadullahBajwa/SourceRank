@@ -26,6 +26,7 @@ Expected signals:
 python scripts/config_check.py
 python scripts/journalists_check.py
 python scripts/rss_check.py
+python scripts/source_balance_check.py
 python scripts/site_check.py
 python scripts/snapshot_check.py
 python scripts/extension_check.py
@@ -62,6 +63,7 @@ After reviewing the health summary, commit updated public artifacts under
 
 - Pipeline configuration and journalist registry pass static validation.
 - RSS registry passes static validation.
+- RSS source balance covers core categories and tier-1 country coverage.
 - Static site files, local links, and public snapshots pass validation.
 - Extension scaffold validates against Manifest V3 expectations.
 - Regression tests pass locally.

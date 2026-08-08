@@ -37,6 +37,9 @@ jobs:
       - name: Validate RSS source registry
         run: python scripts/rss_check.py
 
+      - name: Validate RSS source balance
+        run: python scripts/source_balance_check.py
+
       - name: Validate static site artifacts
         run: python scripts/site_check.py
 
