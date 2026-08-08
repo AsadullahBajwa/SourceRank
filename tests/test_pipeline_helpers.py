@@ -35,7 +35,7 @@ from scripts.journalists_check import validate_journalist_rows
 from scripts.pipeline_health import count_csv_rows, latest_snapshot, sqlite_count
 from scripts.rss_check import validate_source_rows
 from scripts.snapshot_check import validate_history, validate_scores_payload
-from scripts.source_coverage import build_source_report
+from scripts.source_coverage import build_source_report, filter_sources
 from scripts.site_check import missing_site_files, validate_local_links, validate_site
 from scripts.source_taxonomy import is_valid_category, normalize_category
 from time_utils import parse_utc
@@ -636,6 +636,17 @@ class NewsScraperTests(unittest.TestCase):
         self.assertEqual(report["by_language"], {"en": 1, "unknown": 1})
         self.assertEqual(report["by_tier"], {"1": 1, "unknown": 1})
         self.assertEqual(report["by_category"], {"public_broadcaster": 1, "unknown": 1})
+
+    def test_filter_sources_filters_by_normalized_category(self):
+        rows = [
+            {"name": "Reuters", "category": "wire"},
+            {"name": "BBC", "category": "Public Broadcaster"},
+            {"name": "Dawn", "category": "newspaper"},
+        ]
+        self.assertEqual(
+            [row["name"] for row in filter_sources(rows, category="public-broadcaster")],
+            ["BBC"],
+        )
 
 
 class RssCheckTests(unittest.TestCase):

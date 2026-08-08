@@ -4,6 +4,7 @@ Summarize RSS source coverage by country, language, and tier.
 
 Usage:
     python scripts/source_coverage.py
+    python scripts/source_coverage.py --category wire
     python scripts/source_coverage.py --json
 """
 
@@ -24,6 +25,16 @@ EXPECTED_NEWS_COUNTRIES = {"Pakistan", "US", "global"}
 def load_sources(path: str) -> list[dict]:
     with open(path, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
+
+
+def filter_sources(rows: list[dict], category: str | None = None) -> list[dict]:
+    if not category:
+        return rows
+    normalized = normalize_category(category)
+    return [
+        row for row in rows
+        if normalize_category(row.get("category", "")) == normalized
+    ]
 
 
 def build_source_report(rows: list[dict]) -> dict:
@@ -80,10 +91,13 @@ def print_report(report: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Summarize RSS source coverage.")
+    parser.add_argument("--category", help="Filter report by source category")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
     args = parser.parse_args()
 
-    report = build_source_report(load_sources(config.RSS_SOURCES_CSV))
+    report = build_source_report(
+        filter_sources(load_sources(config.RSS_SOURCES_CSV), category=args.category)
+    )
     if args.json:
         print(json.dumps(report, indent=2))
     else:
