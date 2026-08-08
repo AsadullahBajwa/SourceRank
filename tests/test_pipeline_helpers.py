@@ -35,6 +35,7 @@ from scripts.journalists_check import validate_journalist_rows
 from scripts.pipeline_health import count_csv_rows, latest_snapshot, sqlite_count
 from scripts.rss_check import validate_source_rows
 from scripts.snapshot_check import validate_history, validate_scores_payload
+from scripts.source_balance_check import validate_source_balance
 from scripts.source_coverage import build_source_report, filter_sources
 from scripts.site_check import missing_site_files, validate_local_links, validate_site
 from scripts.source_taxonomy import is_valid_category, normalize_category
@@ -686,6 +687,26 @@ class RssCheckTests(unittest.TestCase):
         self.assertTrue(any("invalid URL" in error for error in errors))
         self.assertTrue(any("invalid tier" in error for error in errors))
         self.assertTrue(any("invalid category" in error for error in errors))
+
+    def test_validate_source_balance_accepts_diverse_registry(self):
+        rows = [
+            {"country": "global", "language": "en", "tier": "1", "category": "wire"},
+            {"country": "US", "language": "en", "tier": "1", "category": "newspaper"},
+            {"country": "Pakistan", "language": "en", "tier": "1", "category": "tv"},
+            {"country": "US", "language": "en", "tier": "2", "category": "public_broadcaster"},
+            {"country": "Pakistan", "language": "ur", "tier": "2", "category": "radio"},
+        ]
+        self.assertEqual(validate_source_balance(rows), [])
+
+    def test_validate_source_balance_flags_narrow_registry(self):
+        rows = [
+            {"country": "global", "language": "en", "tier": "1", "category": "wire"},
+            {"country": "global", "language": "en", "tier": "2", "category": "wire"},
+        ]
+        errors = validate_source_balance(rows)
+        self.assertTrue(any("at least 5 source categories" in error for error in errors))
+        self.assertTrue(any("missing core source categories" in error for error in errors))
+        self.assertTrue(any("missing tier-1 sources" in error for error in errors))
 
 
 class JournalistsCheckTests(unittest.TestCase):
