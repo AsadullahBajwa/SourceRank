@@ -25,7 +25,14 @@ from pipeline.verifier import (
 )
 from scrapers.news_scraper import get_db as get_news_db, migrate_articles_schema, select_sources
 from scrapers.tweet_scraper import select_journalists
-from scheduler import _history_status, print_preflight, run_preflight_checks, run_step, select_steps
+from scheduler import (
+    _history_status,
+    _source_gap_status,
+    print_preflight,
+    run_preflight_checks,
+    run_step,
+    select_steps,
+)
 from scripts.audit_registry import build_report, normalized_handle, row_is_active
 from scripts.claim_review import review_candidates, write_csv
 from scripts.config_check import validate_config
@@ -151,6 +158,12 @@ class SchedulerTests(unittest.TestCase):
             "passing": [],
             "failing": ["broken artifact"],
         })
+
+    def test_source_gap_status_limits_top_gaps(self):
+        rows = [{"country": "Pakistan", "category": "newspaper"}]
+        status = _source_gap_status(rows)
+        self.assertGreaterEqual(status["source_gap_count"], 1)
+        self.assertLessEqual(len(status["top_source_gaps"]), 5)
 
     def test_run_step_dry_run_does_not_spawn_process(self):
         with mock.patch("scheduler.subprocess.run") as run:

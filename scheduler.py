@@ -99,6 +99,16 @@ def _history_status(history_dir: str) -> dict[str, object]:
     return {"history_snapshots": len(snapshots), "latest_snapshot": latest}
 
 
+def _source_gap_status(source_rows: list[dict]) -> dict[str, object]:
+    from scripts.source_gap_plan import build_gap_plan
+
+    gaps = build_gap_plan(source_rows)
+    return {
+        "source_gap_count": len(gaps),
+        "top_source_gaps": gaps[:5],
+    }
+
+
 def pipeline_status() -> dict:
     import config
     from scripts.audit_registry import build_report, load_tweet_counts
@@ -140,6 +150,9 @@ def pipeline_status() -> dict:
         "leaderboard_tracked": tracked,
         "leaderboard_ranked": ranked,
     }
+    if os.path.exists(config.RSS_SOURCES_CSV):
+        with open(config.RSS_SOURCES_CSV, newline="", encoding="utf-8") as f:
+            status.update(_source_gap_status(list(csv.DictReader(f))))
     status.update(_history_status(config.HISTORY_DIR))
     return status
 
