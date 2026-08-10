@@ -21,7 +21,8 @@ Next actions:
    `python scripts/claim_review.py --max-confidence 0.5 --csv > claim-review.csv`.
 5. Re-run verification with `python pipeline/verifier.py --recheck --limit 100`.
 6. Refresh RSS source depth with `python scripts/source_coverage.py`.
-7. Use category-targeted dry runs, for example
+7. Plan targeted source additions with `python scripts/source_gap_plan.py --limit 5`.
+8. Use category-targeted dry runs, for example
    `python scrapers/news_scraper.py --category wire --dry-run`.
 
 ## Phase 3 - Product Surface
@@ -81,6 +82,7 @@ Current CI runs:
 - `python scripts/rss_check.py` for source registry shape and dead host checks.
 - `python scripts/source_balance_check.py` for core RSS category and tier-1 country coverage.
 - `python scripts/source_coverage.py --json` for country, tier, language, and category balance.
+- `python scripts/source_gap_plan.py --json` for actionable RSS source expansion gaps.
 - `python scripts/site_check.py` for static site pages and JSON artifacts.
 - `python scripts/snapshot_check.py` for score invariants and history integrity.
 - `python scripts/extension_check.py` for Manifest V3 scaffold checks.

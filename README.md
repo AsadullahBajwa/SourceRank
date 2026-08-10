@@ -373,6 +373,9 @@ python scripts/audit_registry.py --max-missing 10
 python scripts/audit_registry.py --json
 python scripts/source_coverage.py
 python scripts/source_coverage.py --json
+python scripts/source_gap_plan.py
+python scripts/source_gap_plan.py --country Pakistan --limit 5
+python scripts/source_gap_plan.py --json
 
 # Check local DB and leaderboard health
 python scripts/pipeline_health.py

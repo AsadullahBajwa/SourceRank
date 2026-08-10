@@ -18,6 +18,7 @@ Expected signals:
 - `active_journalists` is high enough for the next backfill batch.
 - `tweets_db_exists` and `claims_db_exists` are true on the local operator machine.
 - `pending_claims` is low before a score refresh is published.
+- `source_gap_count` is low, or remaining gaps are intentionally deferred.
 - `latest_snapshot` points to the newest generated leaderboard snapshot.
 
 ## Static Validation
@@ -46,6 +47,7 @@ RSS source categories must stay within the shared taxonomy:
 python scrapers/news_scraper.py
 python scrapers/news_scraper.py --category wire --dry-run
 python scrapers/news_scraper.py --category public_broadcaster --limit 5 --dry-run
+python scripts/source_gap_plan.py --limit 5
 python scripts/coverage_plan.py --limit 10
 python scrapers/tweet_scraper.py --only-missing --limit 5
 OLLAMA_NUM_PARALLEL=4 python pipeline/claim_extractor.py --limit 500
