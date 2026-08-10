@@ -37,6 +37,7 @@ from scripts.rss_check import validate_source_rows
 from scripts.snapshot_check import validate_history, validate_scores_payload
 from scripts.source_balance_check import validate_source_balance
 from scripts.source_coverage import build_source_report, filter_sources
+from scripts.source_gap_plan import build_gap_plan, source_counts_by_country_category
 from scripts.site_check import missing_site_files, validate_local_links, validate_site
 from scripts.source_taxonomy import is_valid_category, normalize_category
 from time_utils import parse_utc
@@ -707,6 +708,47 @@ class RssCheckTests(unittest.TestCase):
         self.assertTrue(any("at least 5 source categories" in error for error in errors))
         self.assertTrue(any("missing core source categories" in error for error in errors))
         self.assertTrue(any("missing tier-1 sources" in error for error in errors))
+
+    def test_source_counts_by_country_category_normalizes_categories(self):
+        rows = [
+            {"country": "Pakistan", "category": "Public Broadcaster"},
+            {"country": "Pakistan", "category": "public-broadcaster"},
+            {"country": "", "category": ""},
+        ]
+        counts = source_counts_by_country_category(rows)
+        self.assertEqual(counts[("Pakistan", "public_broadcaster")], 2)
+        self.assertEqual(counts[("unknown", "unknown")], 1)
+
+    def test_build_gap_plan_prioritizes_empty_required_categories(self):
+        rows = [
+            {"country": "Pakistan", "category": "newspaper"},
+            {"country": "Pakistan", "category": "newspaper"},
+            {"country": "US", "category": "digital_native"},
+        ]
+        gaps = build_gap_plan(
+            rows,
+            targets={
+                "Pakistan": {"newspaper": 3, "tv": 1},
+                "US": {"digital_native": 2},
+            },
+        )
+        self.assertEqual(gaps[0]["country"], "Pakistan")
+        self.assertEqual(gaps[0]["category"], "tv")
+        self.assertEqual(gaps[0]["priority"], "high")
+        self.assertEqual(gaps[0]["missing"], 1)
+
+    def test_build_gap_plan_filters_country(self):
+        rows = [{"country": "Pakistan", "category": "newspaper"}]
+        gaps = build_gap_plan(
+            rows,
+            targets={
+                "Pakistan": {"newspaper": 2},
+                "US": {"newspaper": 2},
+            },
+            country="pakistan",
+        )
+        self.assertEqual(len(gaps), 1)
+        self.assertEqual(gaps[0]["country"], "Pakistan")
 
 
 class JournalistsCheckTests(unittest.TestCase):
