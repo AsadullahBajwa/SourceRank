@@ -37,7 +37,12 @@ from scripts.rss_check import validate_source_rows
 from scripts.snapshot_check import validate_history, validate_scores_payload
 from scripts.source_balance_check import validate_source_balance
 from scripts.source_coverage import build_source_report, filter_sources
-from scripts.source_gap_plan import build_gap_plan, source_counts_by_country_category
+from scripts.source_gap_plan import (
+    build_gap_plan,
+    limited_gaps,
+    print_gap_plan,
+    source_counts_by_country_category,
+)
 from scripts.site_check import missing_site_files, validate_local_links, validate_site
 from scripts.source_taxonomy import is_valid_category, normalize_category
 from time_utils import parse_utc
@@ -749,6 +754,17 @@ class RssCheckTests(unittest.TestCase):
         )
         self.assertEqual(len(gaps), 1)
         self.assertEqual(gaps[0]["country"], "Pakistan")
+
+    def test_limited_gaps_keeps_requested_prefix(self):
+        gaps = [{"country": "A"}, {"country": "B"}]
+        self.assertEqual(limited_gaps(gaps, limit=1), [{"country": "A"}])
+        self.assertEqual(limited_gaps(gaps, limit=0), gaps)
+
+    def test_print_gap_plan_handles_empty_plan(self):
+        stream = io.StringIO()
+        with mock.patch("sys.stdout", stream):
+            print_gap_plan([])
+        self.assertEqual(stream.getvalue().strip(), "No RSS source category gaps found.")
 
 
 class JournalistsCheckTests(unittest.TestCase):

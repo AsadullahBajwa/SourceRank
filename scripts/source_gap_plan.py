@@ -1,10 +1,22 @@
 """
 source_gap_plan.py
 Plan the next RSS source additions by country and source category.
+
+Usage:
+    python scripts/source_gap_plan.py
+    python scripts/source_gap_plan.py --country Pakistan --limit 5
+    python scripts/source_gap_plan.py --json
 """
 
+import argparse
+import json
+import os
+import sys
 from collections import Counter
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import config
+from scripts.source_coverage import load_sources
 from scripts.source_taxonomy import CATEGORY_LABELS, normalize_category
 
 COUNTRY_CATEGORY_TARGETS = {
@@ -76,3 +88,43 @@ def build_gap_plan(
             row["category"],
         ),
     )
+
+
+def limited_gaps(gaps: list[dict], limit: int | None = None) -> list[dict]:
+    if limit and limit > 0:
+        return gaps[:limit]
+    return gaps
+
+
+def print_gap_plan(gaps: list[dict]) -> None:
+    if not gaps:
+        print("No RSS source category gaps found.")
+        return
+    print("| Country | Category | Current | Target | Missing | Priority |")
+    print("|---|---|---:|---:|---:|---|")
+    for gap in gaps:
+        print(
+            f"| {gap['country']} | {gap['category_label']} | "
+            f"{gap['current']} | {gap['target']} | {gap['missing']} | {gap['priority']} |"
+        )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Plan RSS source additions by country/category.")
+    parser.add_argument("--country", help="Filter gaps by country")
+    parser.add_argument("--limit", type=int, help="Maximum gaps to print")
+    parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    args = parser.parse_args()
+
+    gaps = limited_gaps(
+        build_gap_plan(load_sources(config.RSS_SOURCES_CSV), country=args.country),
+        limit=args.limit,
+    )
+    if args.json:
+        print(json.dumps({"gaps": gaps}, indent=2))
+    else:
+        print_gap_plan(gaps)
+
+
+if __name__ == "__main__":
+    main()
