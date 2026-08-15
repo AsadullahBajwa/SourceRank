@@ -39,7 +39,7 @@ from scripts.config_check import validate_config
 from scripts.coverage_plan import missing_active_handles
 from scripts.extension_check import missing_extension_files, validate_manifest
 from scripts.journalists_check import validate_journalist_rows
-from scripts.pipeline_health import count_csv_rows, latest_snapshot, sqlite_count
+from scripts.pipeline_health import build_health_report, count_csv_rows, latest_snapshot, sqlite_count
 from scripts.rss_check import validate_source_rows
 from scripts.snapshot_check import validate_history, validate_scores_payload
 from scripts.source_balance_check import validate_source_balance
@@ -1035,6 +1035,26 @@ class PipelineHealthTests(unittest.TestCase):
             with open(os.path.join(tmpdir, "index.json"), "w", encoding="utf-8") as f:
                 f.write('{"latest": "scores_2026-06-16.json"}')
             self.assertEqual(latest_snapshot(tmpdir), "scores_2026-06-16.json")
+
+    def test_build_health_report_includes_source_gap_counts(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            journalists_path = os.path.join(tmpdir, "journalists.csv")
+            rss_path = os.path.join(tmpdir, "rss_sources.csv")
+            with open(journalists_path, "w", encoding="utf-8") as f:
+                f.write("handle,name,beat,country,followers_tier,verified,active\n")
+                f.write("alpha,Alpha,Politics,US,medium,true,true\n")
+            with open(rss_path, "w", encoding="utf-8") as f:
+                f.write("name,url,country,language,tier,category\n")
+                f.write("Reuters,https://example.test,global,en,1,wire\n")
+            with mock.patch.object(config, "JOURNALISTS_CSV", journalists_path), \
+                    mock.patch.object(config, "RSS_SOURCES_CSV", rss_path), \
+                    mock.patch.object(config, "TWEETS_DB", os.path.join(tmpdir, "tweets.db")), \
+                    mock.patch.object(config, "CLAIMS_DB", os.path.join(tmpdir, "claims.db")), \
+                    mock.patch.object(config, "HISTORY_DIR", os.path.join(tmpdir, "history")):
+                report = build_health_report()
+        self.assertEqual(report["active_journalists"], 1)
+        self.assertGreater(report["source_gap_count"], 0)
+        self.assertGreater(report["high_priority_source_gaps"], 0)
 
 
 class SiteCheckTests(unittest.TestCase):

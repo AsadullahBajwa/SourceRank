@@ -16,6 +16,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from scripts.source_coverage import load_sources
+from scripts.source_gap_plan import build_gap_plan
 
 
 def count_csv_rows(path: str) -> int:
@@ -62,10 +64,18 @@ def build_health_report() -> dict:
                 if row.get("active", "").strip().lower() == "true"
             )
 
+    source_gaps = []
+    if os.path.exists(config.RSS_SOURCES_CSV):
+        source_gaps = build_gap_plan(load_sources(config.RSS_SOURCES_CSV))
+
     return {
         "journalists": count_csv_rows(config.JOURNALISTS_CSV),
         "active_journalists": active_journalists,
         "rss_sources": count_csv_rows(config.RSS_SOURCES_CSV),
+        "source_gap_count": len(source_gaps),
+        "high_priority_source_gaps": sum(
+            1 for gap in source_gaps if gap.get("priority") == "high"
+        ),
         "tweets_db_exists": os.path.exists(config.TWEETS_DB),
         "claims_db_exists": os.path.exists(config.CLAIMS_DB),
         "tweets": sqlite_count(config.TWEETS_DB, "tweets"),
