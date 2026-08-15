@@ -41,6 +41,17 @@ COUNTRY_CATEGORY_TARGETS = {
     },
 }
 
+SEARCH_HINTS = {
+    "wire": "{country} wire service RSS politics news",
+    "public_broadcaster": "{country} public broadcaster RSS politics news",
+    "newspaper": "{country} newspaper RSS politics news",
+    "digital_native": "{country} digital news outlet RSS politics",
+    "nonprofit_investigative": "{country} nonprofit investigative journalism RSS",
+    "tv": "{country} TV news RSS politics",
+    "radio": "{country} radio news RSS politics",
+    "regional": "{country} regional news RSS politics",
+}
+
 
 def source_counts_by_country_category(rows: list[dict]) -> Counter:
     counts = Counter()
@@ -49,6 +60,18 @@ def source_counts_by_country_category(rows: list[dict]) -> Counter:
         category = normalize_category(row.get("category", "")) or "unknown"
         counts[(country, category)] += 1
     return counts
+
+
+def source_gap_hint(country: str, category: str) -> dict:
+    search_template = SEARCH_HINTS.get(category, "{country} news RSS " + category)
+    search_country = "international" if country == "global" else country
+    return {
+        "search_query": search_template.format(country=search_country),
+        "registry_note": (
+            f"Add a {CATEGORY_LABELS.get(category, category)} RSS source for {country} "
+            "with a stable feed URL and the correct tier."
+        ),
+    }
 
 
 def build_gap_plan(
@@ -69,6 +92,7 @@ def build_gap_plan(
             missing = max(target - current, 0)
             if not missing:
                 continue
+            hint = source_gap_hint(target_country, category)
             gaps.append({
                 "country": target_country,
                 "category": category,
@@ -77,6 +101,8 @@ def build_gap_plan(
                 "target": target,
                 "missing": missing,
                 "priority": "high" if current == 0 else "medium",
+                "search_query": hint["search_query"],
+                "registry_note": hint["registry_note"],
             })
 
     return sorted(

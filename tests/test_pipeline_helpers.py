@@ -48,6 +48,7 @@ from scripts.source_gap_plan import (
     build_gap_plan,
     limited_gaps,
     print_gap_plan,
+    source_gap_hint,
     source_counts_by_country_category,
 )
 from scripts.site_check import missing_site_files, validate_local_links, validate_site
@@ -754,6 +755,13 @@ class RssCheckTests(unittest.TestCase):
         self.assertEqual(gaps[0]["category"], "tv")
         self.assertEqual(gaps[0]["priority"], "high")
         self.assertEqual(gaps[0]["missing"], 1)
+        self.assertIn("Pakistan", gaps[0]["search_query"])
+        self.assertIn("RSS source", gaps[0]["registry_note"])
+
+    def test_source_gap_hint_uses_international_search_for_global_sources(self):
+        hint = source_gap_hint("global", "wire")
+        self.assertIn("international", hint["search_query"])
+        self.assertIn("Wire service", hint["registry_note"])
 
     def test_build_gap_plan_filters_country(self):
         rows = [{"country": "Pakistan", "category": "newspaper"}]
