@@ -50,6 +50,7 @@ from scripts.source_gap_plan import (
     print_gap_plan,
     source_gap_hint,
     source_counts_by_country_category,
+    write_csv as write_gap_csv,
 )
 from scripts.site_check import missing_site_files, validate_local_links, validate_site
 from scripts.source_taxonomy import is_valid_category, normalize_category
@@ -786,6 +787,26 @@ class RssCheckTests(unittest.TestCase):
         with mock.patch("sys.stdout", stream):
             print_gap_plan([])
         self.assertEqual(stream.getvalue().strip(), "No RSS source category gaps found.")
+
+    def test_write_gap_csv_preserves_recommendation_fields(self):
+        stream = io.StringIO()
+        write_gap_csv(
+            [{
+                "country": "Pakistan",
+                "category": "digital_native",
+                "category_label": "Digital-native outlet",
+                "current": 0,
+                "target": 1,
+                "missing": 1,
+                "priority": "high",
+                "search_query": "Pakistan digital news outlet RSS politics",
+                "registry_note": "Add a digital-native source, then validate RSS.",
+            }],
+            stream,
+        )
+        output = stream.getvalue()
+        self.assertTrue(output.startswith("country,category,category_label"))
+        self.assertIn('"Add a digital-native source, then validate RSS."', output)
 
 
 class JournalistsCheckTests(unittest.TestCase):

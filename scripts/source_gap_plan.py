@@ -5,10 +5,12 @@ Plan the next RSS source additions by country and source category.
 Usage:
     python scripts/source_gap_plan.py
     python scripts/source_gap_plan.py --country Pakistan --limit 5
+    python scripts/source_gap_plan.py --csv
     python scripts/source_gap_plan.py --json
 """
 
 import argparse
+import csv
 import json
 import os
 import sys
@@ -51,6 +53,18 @@ SEARCH_HINTS = {
     "radio": "{country} radio news RSS politics",
     "regional": "{country} regional news RSS politics",
 }
+
+CSV_FIELDS = [
+    "country",
+    "category",
+    "category_label",
+    "current",
+    "target",
+    "missing",
+    "priority",
+    "search_query",
+    "registry_note",
+]
 
 
 def source_counts_by_country_category(rows: list[dict]) -> Counter:
@@ -135,11 +149,19 @@ def print_gap_plan(gaps: list[dict]) -> None:
         )
 
 
+def write_csv(gaps: list[dict], stream) -> None:
+    writer = csv.DictWriter(stream, fieldnames=CSV_FIELDS, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(gaps)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Plan RSS source additions by country/category.")
     parser.add_argument("--country", help="Filter gaps by country")
     parser.add_argument("--limit", type=int, help="Maximum gaps to print")
-    parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    output_group.add_argument("--csv", action="store_true", help="Print spreadsheet-ready CSV")
     args = parser.parse_args()
 
     gaps = limited_gaps(
@@ -148,6 +170,8 @@ def main() -> None:
     )
     if args.json:
         print(json.dumps({"gaps": gaps}, indent=2))
+    elif args.csv:
+        write_csv(gaps, sys.stdout)
     else:
         print_gap_plan(gaps)
 
