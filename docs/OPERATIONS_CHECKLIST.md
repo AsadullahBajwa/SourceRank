@@ -48,6 +48,7 @@ python scrapers/news_scraper.py
 python scrapers/news_scraper.py --category wire --dry-run
 python scrapers/news_scraper.py --category public_broadcaster --limit 5 --dry-run
 python scripts/source_gap_plan.py --limit 5
+python scripts/source_gap_plan.py --priority high --csv
 python scripts/coverage_plan.py --limit 10
 python scrapers/tweet_scraper.py --only-missing --limit 5
 OLLAMA_NUM_PARALLEL=4 python pipeline/claim_extractor.py --limit 500

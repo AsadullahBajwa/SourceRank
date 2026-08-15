@@ -375,6 +375,7 @@ python scripts/source_coverage.py
 python scripts/source_coverage.py --json
 python scripts/source_gap_plan.py
 python scripts/source_gap_plan.py --country Pakistan --limit 5
+python scripts/source_gap_plan.py --priority high --csv
 python scripts/source_gap_plan.py --json
 
 # Check local DB and leaderboard health
@@ -525,6 +526,7 @@ Detailed execution notes live in [`docs/PHASE_PLAN.md`](docs/PHASE_PLAN.md).
 - [ ] Raise coverage from 17 active handles to 100+ journalists
 - [ ] Expand historical tweet import coverage
 - [x] Add RSS source depth audit by country, language, and tier
+- [x] Add actionable RSS source gap planning by country and category
 - [ ] Improve country-specific RSS source depth
 - [x] Add claim review tools for false positive extraction audits
 - [x] Add spreadsheet-ready claim review export
