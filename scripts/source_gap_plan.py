@@ -4,6 +4,7 @@ Plan the next RSS source additions by country and source category.
 
 Usage:
     python scripts/source_gap_plan.py
+    python scripts/source_gap_plan.py --priority high
     python scripts/source_gap_plan.py --country Pakistan --limit 5
     python scripts/source_gap_plan.py --csv
     python scripts/source_gap_plan.py --json
@@ -136,6 +137,13 @@ def limited_gaps(gaps: list[dict], limit: int | None = None) -> list[dict]:
     return gaps
 
 
+def filter_gaps_by_priority(gaps: list[dict], priority: str | None = None) -> list[dict]:
+    if not priority:
+        return gaps
+    normalized = priority.strip().lower()
+    return [gap for gap in gaps if gap.get("priority") == normalized]
+
+
 def print_gap_plan(gaps: list[dict]) -> None:
     if not gaps:
         print("No RSS source category gaps found.")
@@ -158,6 +166,7 @@ def write_csv(gaps: list[dict], stream) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Plan RSS source additions by country/category.")
     parser.add_argument("--country", help="Filter gaps by country")
+    parser.add_argument("--priority", choices=["high", "medium"], help="Filter gaps by priority")
     parser.add_argument("--limit", type=int, help="Maximum gaps to print")
     output_group = parser.add_mutually_exclusive_group()
     output_group.add_argument("--json", action="store_true", help="Print machine-readable JSON")
@@ -165,7 +174,10 @@ def main() -> None:
     args = parser.parse_args()
 
     gaps = limited_gaps(
-        build_gap_plan(load_sources(config.RSS_SOURCES_CSV), country=args.country),
+        filter_gaps_by_priority(
+            build_gap_plan(load_sources(config.RSS_SOURCES_CSV), country=args.country),
+            priority=args.priority,
+        ),
         limit=args.limit,
     )
     if args.json:

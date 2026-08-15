@@ -46,6 +46,7 @@ from scripts.source_balance_check import validate_source_balance
 from scripts.source_coverage import build_source_report, filter_sources
 from scripts.source_gap_plan import (
     build_gap_plan,
+    filter_gaps_by_priority,
     limited_gaps,
     print_gap_plan,
     source_gap_hint,
@@ -781,6 +782,11 @@ class RssCheckTests(unittest.TestCase):
         gaps = [{"country": "A"}, {"country": "B"}]
         self.assertEqual(limited_gaps(gaps, limit=1), [{"country": "A"}])
         self.assertEqual(limited_gaps(gaps, limit=0), gaps)
+
+    def test_filter_gaps_by_priority_matches_normalized_priority(self):
+        gaps = [{"priority": "high"}, {"priority": "medium"}]
+        self.assertEqual(filter_gaps_by_priority(gaps, " HIGH "), [{"priority": "high"}])
+        self.assertEqual(filter_gaps_by_priority(gaps, None), gaps)
 
     def test_print_gap_plan_handles_empty_plan(self):
         stream = io.StringIO()
