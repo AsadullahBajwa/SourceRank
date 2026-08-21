@@ -381,6 +381,9 @@ python scripts/source_gap_plan.py --json
 # Check local DB and leaderboard health
 python scripts/pipeline_health.py
 python scripts/pipeline_health.py --json
+python scripts/feed_health.py --status missing --limit 10
+python scripts/feed_health.py --status stale --limit 10
+python scripts/feed_health.py --json
 python scheduler.py --status
 python scheduler.py --status --json
 python scheduler.py --from-step extract --through-step score --dry-run

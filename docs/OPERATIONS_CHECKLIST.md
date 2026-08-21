@@ -10,6 +10,8 @@ python scheduler.py --preflight
 python scheduler.py --preflight --json
 python scripts/pipeline_health.py
 python scripts/pipeline_health.py --json
+python scripts/feed_health.py --status missing --limit 10
+python scripts/feed_health.py --status stale --limit 10
 ```
 
 Expected signals:
@@ -19,6 +21,7 @@ Expected signals:
 - `tweets_db_exists` and `claims_db_exists` are true on the local operator machine.
 - `pending_claims` is low before a score refresh is published.
 - `source_gap_count` is low, or remaining gaps are intentionally deferred.
+- `feed_problem_sources`, `feed_missing_sources`, and `feed_stale_sources` are understood before a score refresh.
 - `latest_snapshot` points to the newest generated leaderboard snapshot.
 
 ## Static Validation
@@ -47,6 +50,7 @@ RSS source categories must stay within the shared taxonomy:
 python scrapers/news_scraper.py
 python scrapers/news_scraper.py --category wire --dry-run
 python scrapers/news_scraper.py --category public_broadcaster --limit 5 --dry-run
+python scripts/feed_health.py --status stale --limit 10
 python scripts/source_gap_plan.py --limit 5
 python scripts/source_gap_plan.py --priority high --csv
 python scripts/coverage_plan.py --limit 10

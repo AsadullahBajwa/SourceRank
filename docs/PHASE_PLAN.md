@@ -83,6 +83,7 @@ Current CI runs:
 - `python scripts/source_balance_check.py` for core RSS category and tier-1 country coverage.
 - `python scripts/source_coverage.py --json` for country, tier, language, and category balance.
 - `python scripts/source_gap_plan.py --json` and `--csv` for actionable RSS source expansion gaps.
+- `python scripts/feed_health.py --json` for missing, stale, warning, and error-prone RSS fetches.
 - `python scripts/site_check.py` for static site pages and JSON artifacts.
 - `python scripts/snapshot_check.py` for score invariants and history integrity.
 - `python scripts/extension_check.py` for Manifest V3 scaffold checks.
