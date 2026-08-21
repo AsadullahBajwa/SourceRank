@@ -38,7 +38,12 @@ from scripts.claim_review import review_candidates, write_csv
 from scripts.config_check import validate_config
 from scripts.coverage_plan import missing_active_handles
 from scripts.extension_check import missing_extension_files, validate_manifest
-from scripts.feed_health import build_feed_health_report, latest_logs_by_source, load_feed_logs
+from scripts.feed_health import (
+    build_feed_health_report,
+    filter_problems,
+    latest_logs_by_source,
+    load_feed_logs,
+)
 from scripts.journalists_check import validate_journalist_rows
 from scripts.pipeline_health import build_health_report, count_csv_rows, latest_snapshot, sqlite_count
 from scripts.rss_check import validate_source_rows
@@ -1102,6 +1107,22 @@ class FeedHealthTests(unittest.TestCase):
 
     def test_load_feed_logs_handles_missing_database(self):
         self.assertEqual(load_feed_logs(os.path.join("missing", "claims.db")), [])
+
+    def test_filter_problems_can_select_stale_or_limit_rows(self):
+        problems = [
+            {"source_name": "Reuters", "status": "ok", "is_stale": True},
+            {"source_name": "BBC", "status": "missing", "is_stale": False},
+            {"source_name": "Dawn", "status": "warning", "is_stale": False},
+        ]
+        self.assertEqual(
+            [problem["source_name"] for problem in filter_problems(problems, status="stale")],
+            ["Reuters"],
+        )
+        self.assertEqual(
+            [problem["source_name"] for problem in filter_problems(problems, status="missing")],
+            ["BBC"],
+        )
+        self.assertEqual(filter_problems(problems, limit=1), [problems[0]])
 
 
 class SiteCheckTests(unittest.TestCase):

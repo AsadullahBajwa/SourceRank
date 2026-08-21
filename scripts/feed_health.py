@@ -4,6 +4,7 @@ Summarize RSS feed fetch freshness and failures from claims.db.
 
 Usage:
     python scripts/feed_health.py
+    python scripts/feed_health.py --status missing --limit 10
     python scripts/feed_health.py --json
 """
 
@@ -80,6 +81,7 @@ def build_feed_health_report(
             problems.append({
                 "source_name": source_name,
                 "status": "missing",
+                "is_stale": False,
                 "age_hours": None,
                 "entry_count": 0,
                 "new_count": 0,
@@ -98,6 +100,7 @@ def build_feed_health_report(
             problems.append({
                 "source_name": source_name,
                 "status": status,
+                "is_stale": is_stale,
                 "age_hours": age_hours,
                 "entry_count": int(log_row.get("entry_count") or 0),
                 "new_count": int(log_row.get("new_count") or 0),
@@ -112,6 +115,26 @@ def build_feed_health_report(
         "problem_count": len(problems),
         "problems": problems,
     }
+
+
+def filter_problems(
+    problems: list[dict],
+    status: str | None = None,
+    limit: int | None = None,
+) -> list[dict]:
+    selected = problems
+    if status:
+        normalized = status.strip().lower()
+        if normalized == "stale":
+            selected = [problem for problem in selected if problem.get("is_stale")]
+        else:
+            selected = [
+                problem for problem in selected
+                if problem.get("status") == normalized
+            ]
+    if limit and limit > 0:
+        selected = selected[:limit]
+    return selected
 
 
 def print_report(report: dict) -> None:
@@ -131,6 +154,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Summarize RSS feed fetch health.")
     parser.add_argument("--stale-hours", type=int, default=24,
                         help="Hours after which a feed log is considered stale")
+    parser.add_argument("--status", choices=["missing", "stale", "warning", "error"],
+                        help="Filter problem feeds by status")
+    parser.add_argument("--limit", type=int, help="Maximum problem feeds to print")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
     args = parser.parse_args()
 
@@ -139,6 +165,12 @@ def main() -> None:
         load_feed_logs(config.CLAIMS_DB),
         stale_after_hours=args.stale_hours,
     )
+    report["problems"] = filter_problems(
+        report["problems"],
+        status=args.status,
+        limit=args.limit,
+    )
+    report["shown_problem_count"] = len(report["problems"])
     if args.json:
         print(json.dumps(report, indent=2, sort_keys=True))
     else:
