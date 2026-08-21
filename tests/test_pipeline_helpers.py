@@ -1061,6 +1061,9 @@ class PipelineHealthTests(unittest.TestCase):
         self.assertEqual(report["active_journalists"], 1)
         self.assertGreater(report["source_gap_count"], 0)
         self.assertGreater(report["high_priority_source_gaps"], 0)
+        self.assertEqual(report["feed_problem_sources"], 1)
+        self.assertEqual(report["feed_missing_sources"], 1)
+        self.assertEqual(report["feed_stale_sources"], 0)
 
 
 class FeedHealthTests(unittest.TestCase):

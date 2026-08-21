@@ -16,6 +16,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from scripts.feed_health import build_feed_health_report, load_feed_logs
 from scripts.source_coverage import load_sources
 from scripts.source_gap_plan import build_gap_plan
 
@@ -65,8 +66,11 @@ def build_health_report() -> dict:
             )
 
     source_gaps = []
+    source_rows = []
     if os.path.exists(config.RSS_SOURCES_CSV):
-        source_gaps = build_gap_plan(load_sources(config.RSS_SOURCES_CSV))
+        source_rows = load_sources(config.RSS_SOURCES_CSV)
+        source_gaps = build_gap_plan(source_rows)
+    feed_health = build_feed_health_report(source_rows, load_feed_logs(config.CLAIMS_DB))
 
     return {
         "journalists": count_csv_rows(config.JOURNALISTS_CSV),
@@ -76,6 +80,9 @@ def build_health_report() -> dict:
         "high_priority_source_gaps": sum(
             1 for gap in source_gaps if gap.get("priority") == "high"
         ),
+        "feed_problem_sources": feed_health["problem_count"],
+        "feed_missing_sources": feed_health["status_counts"]["missing"],
+        "feed_stale_sources": feed_health["status_counts"]["stale"],
         "tweets_db_exists": os.path.exists(config.TWEETS_DB),
         "claims_db_exists": os.path.exists(config.CLAIMS_DB),
         "tweets": sqlite_count(config.TWEETS_DB, "tweets"),
