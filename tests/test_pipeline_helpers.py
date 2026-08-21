@@ -38,6 +38,7 @@ from scripts.claim_review import review_candidates, write_csv
 from scripts.config_check import validate_config
 from scripts.coverage_plan import missing_active_handles
 from scripts.extension_check import missing_extension_files, validate_manifest
+from scripts.feed_health import build_feed_health_report, latest_logs_by_source, load_feed_logs
 from scripts.journalists_check import validate_journalist_rows
 from scripts.pipeline_health import build_health_report, count_csv_rows, latest_snapshot, sqlite_count
 from scripts.rss_check import validate_source_rows
@@ -1055,6 +1056,52 @@ class PipelineHealthTests(unittest.TestCase):
         self.assertEqual(report["active_journalists"], 1)
         self.assertGreater(report["source_gap_count"], 0)
         self.assertGreater(report["high_priority_source_gaps"], 0)
+
+
+class FeedHealthTests(unittest.TestCase):
+    def test_latest_logs_by_source_keeps_newest_fetch(self):
+        latest = latest_logs_by_source([
+            {"source_name": "Reuters", "fetched_at": "2026-06-01T00:00:00", "status": "error"},
+            {"source_name": "Reuters", "fetched_at": "2026-06-02T00:00:00", "status": "ok"},
+        ])
+        self.assertEqual(latest["Reuters"]["status"], "ok")
+
+    def test_build_feed_health_report_flags_missing_and_stale_sources(self):
+        report = build_feed_health_report(
+            [
+                {"name": "Reuters"},
+                {"name": "Dawn"},
+                {"name": "BBC"},
+            ],
+            [
+                {
+                    "source_name": "Reuters",
+                    "fetched_at": "2026-06-01T00:00:00",
+                    "status": "ok",
+                    "entry_count": 10,
+                    "new_count": 2,
+                    "error": "",
+                },
+                {
+                    "source_name": "Dawn",
+                    "fetched_at": "2026-06-02T11:00:00",
+                    "status": "warning",
+                    "entry_count": 5,
+                    "new_count": 1,
+                    "error": "parse warning",
+                },
+            ],
+            stale_after_hours=24,
+            now=datetime.datetime(2026, 6, 2, 12, 0, 0),
+        )
+        self.assertEqual(report["total_sources"], 3)
+        self.assertEqual(report["fetched_sources"], 2)
+        self.assertEqual(report["status_counts"]["missing"], 1)
+        self.assertEqual(report["status_counts"]["stale"], 1)
+        self.assertEqual([problem["source_name"] for problem in report["problems"]], ["BBC", "Dawn", "Reuters"])
+
+    def test_load_feed_logs_handles_missing_database(self):
+        self.assertEqual(load_feed_logs(os.path.join("missing", "claims.db")), [])
 
 
 class SiteCheckTests(unittest.TestCase):
