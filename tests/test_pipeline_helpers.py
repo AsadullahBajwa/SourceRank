@@ -26,6 +26,7 @@ from pipeline.verifier import (
 from scrapers.news_scraper import get_db as get_news_db, migrate_articles_schema, select_sources
 from scrapers.tweet_scraper import select_journalists
 from scheduler import (
+    _feed_health_status,
     _history_status,
     _source_gap_status,
     print_preflight,
@@ -173,6 +174,16 @@ class SchedulerTests(unittest.TestCase):
         status = _source_gap_status(rows)
         self.assertGreaterEqual(status["source_gap_count"], 1)
         self.assertLessEqual(len(status["top_source_gaps"]), 5)
+
+    def test_feed_health_status_limits_top_problems(self):
+        rows = [{"name": f"Source {index}"} for index in range(7)]
+        with tempfile.TemporaryDirectory() as tmpdir, \
+                mock.patch.object(config, "CLAIMS_DB", os.path.join(tmpdir, "claims.db")):
+            status = _feed_health_status(rows)
+        self.assertEqual(status["feed_problem_sources"], 7)
+        self.assertEqual(status["feed_missing_sources"], 7)
+        self.assertEqual(status["feed_stale_sources"], 0)
+        self.assertEqual(len(status["top_feed_problems"]), 5)
 
     def test_run_step_dry_run_does_not_spawn_process(self):
         with mock.patch("scheduler.subprocess.run") as run:

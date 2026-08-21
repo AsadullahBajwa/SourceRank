@@ -109,6 +109,19 @@ def _source_gap_status(source_rows: list[dict]) -> dict[str, object]:
     }
 
 
+def _feed_health_status(source_rows: list[dict]) -> dict[str, object]:
+    import config
+    from scripts.feed_health import build_feed_health_report, load_feed_logs
+
+    report = build_feed_health_report(source_rows, load_feed_logs(config.CLAIMS_DB))
+    return {
+        "feed_problem_sources": report["problem_count"],
+        "feed_missing_sources": report["status_counts"]["missing"],
+        "feed_stale_sources": report["status_counts"]["stale"],
+        "top_feed_problems": report["problems"][:5],
+    }
+
+
 def pipeline_status() -> dict:
     import config
     from scripts.audit_registry import build_report, load_tweet_counts
@@ -152,7 +165,9 @@ def pipeline_status() -> dict:
     }
     if os.path.exists(config.RSS_SOURCES_CSV):
         with open(config.RSS_SOURCES_CSV, newline="", encoding="utf-8") as f:
-            status.update(_source_gap_status(list(csv.DictReader(f))))
+            source_rows = list(csv.DictReader(f))
+        status.update(_source_gap_status(source_rows))
+        status.update(_feed_health_status(source_rows))
     status.update(_history_status(config.HISTORY_DIR))
     return status
 
