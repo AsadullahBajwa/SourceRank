@@ -28,8 +28,8 @@ Current local status from `scheduler.py --status --json`:
 
 | Metric | Value |
 |---|---:|
-| Active journalists | 81 |
-| Tweet coverage | 21.0% |
+| Active journalists | 93 |
+| Tweet coverage | 18.3% |
 | Original tweets | 6,774 |
 | Claims extracted | 616 |
 | Confirmed claims | 436 |
@@ -526,11 +526,12 @@ Detailed execution notes live in [`docs/PHASE_PLAN.md`](docs/PHASE_PLAN.md).
 
 ### Phase 2 - Data Coverage
 
-- [ ] Raise coverage from 17 active handles to 100+ journalists
+- [x] Expand journalist registry beyond 100 targets
+- [ ] Backfill tweets for 76 active handles without local coverage
 - [ ] Expand historical tweet import coverage
 - [x] Add RSS source depth audit by country, language, and tier
 - [x] Add actionable RSS source gap planning by country and category
-- [ ] Improve country-specific RSS source depth
+- [x] Improve Pakistan RSS source depth with digital-native feeds
 - [x] Add claim review tools for false positive extraction audits
 - [x] Add spreadsheet-ready claim review export
 - [x] Add registry and snapshot integrity gates

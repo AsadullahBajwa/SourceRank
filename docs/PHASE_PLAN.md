@@ -8,8 +8,8 @@ Goal: expand from a small proof-of-concept dataset to enough tweet and claim cov
 
 Current blockers:
 
-- Only a minority of active handles have local tweets.
-- RSS source depth is uneven across countries and source categories.
+- Only 17 of 93 active handles currently have local tweets.
+- RSS source categories meet the current target mix, but new feeds need a live refresh to populate `feed_fetch_log`.
 - Some extracted claims need manual review before score movement is trusted.
 
 Next actions:
@@ -21,9 +21,9 @@ Next actions:
    `python scripts/claim_review.py --max-confidence 0.5 --csv > claim-review.csv`.
 5. Re-run verification with `python pipeline/verifier.py --recheck --limit 100`.
 6. Refresh RSS source depth with `python scripts/source_coverage.py`.
-7. Plan targeted source additions with `python scripts/source_gap_plan.py --priority high --csv`.
+7. Confirm no source-category gaps remain with `python scripts/source_gap_plan.py --priority high --csv`.
 8. Use category-targeted dry runs, for example
-   `python scrapers/news_scraper.py --category wire --dry-run`.
+   `python scrapers/news_scraper.py --category digital_native --dry-run`.
 
 ## Phase 3 - Product Surface
 
