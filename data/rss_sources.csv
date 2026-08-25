@@ -26,6 +26,9 @@ Samaa TV,https://www.samaa.tv/feed/,Pakistan,en,2,tv
 Jang News,https://e.jang.com.pk/rss.xml,Pakistan,ur,2,newspaper
 Hum News,https://www.humnews.pk/feed/,Pakistan,en,2,tv
 Radio Pakistan,https://www.radio.gov.pk/feed,Pakistan,en,2,radio
+Naya Daur English,https://nayadaur.tv/rss,Pakistan,en,2,digital_native
+Naya Daur Urdu,https://urdu.nayadaur.tv/rss,Pakistan,ur,2,digital_native
+The Friday Times,https://www.thefridaytimes.com/rss,Pakistan,en,2,digital_native
 Guardian UK,https://www.theguardian.com/world/rss,UK,en,1,newspaper
 BBC UK,https://feeds.bbci.co.uk/news/uk/rss.xml,UK,en,1,public_broadcaster
 Sky News UK,https://feeds.skynews.com/feeds/rss/uk.xml,UK,en,2,tv
