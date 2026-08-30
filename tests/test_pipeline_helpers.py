@@ -474,9 +474,30 @@ class FindHandlesTests(unittest.TestCase):
 class RegistryAuditTests(unittest.TestCase):
     def test_build_report_finds_duplicate_names_and_coverage_gaps(self):
         rows = [
-            {"handle": "alpha", "name": "Alex Example", "beat": "Politics", "country": "US", "active": "true"},
-            {"handle": "alpha2", "name": "Alex Example", "beat": "Politics", "country": "US", "active": "false"},
-            {"handle": "beta", "name": "Beta Example", "beat": "Politics", "country": "Pakistan", "active": "true"},
+            {
+                "handle": "alpha",
+                "name": "Alex Example",
+                "beat": "Politics",
+                "country": "US",
+                "followers_tier": "high",
+                "active": "true",
+            },
+            {
+                "handle": "alpha2",
+                "name": "Alex Example",
+                "beat": "Politics",
+                "country": "US",
+                "followers_tier": "medium",
+                "active": "false",
+            },
+            {
+                "handle": "beta",
+                "name": "Beta Example",
+                "beat": "Politics",
+                "country": "Pakistan",
+                "followers_tier": "medium",
+                "active": "true",
+            },
         ]
         report = build_report(rows, {"alpha": 3})
         self.assertEqual(report["active"], 2)
@@ -484,6 +505,8 @@ class RegistryAuditTests(unittest.TestCase):
         self.assertEqual(report["active_coverage_pct"], 50.0)
         self.assertEqual(report["active_by_beat"], {"Politics": 2})
         self.assertEqual(report["inactive_by_beat"], {"Politics": 1})
+        self.assertEqual(report["active_by_follower_tier"], {"high": 1, "medium": 1})
+        self.assertEqual(report["inactive_by_follower_tier"], {"medium": 1})
         self.assertIn("Alex Example", report["duplicate_names"])
         self.assertNotIn("Alex Example", report["active_duplicate_names"])
         self.assertEqual(report["active_without_tweets_by_country"], {"Pakistan": 1})

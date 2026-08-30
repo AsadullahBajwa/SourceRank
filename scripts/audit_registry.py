@@ -68,6 +68,15 @@ def build_report(rows: list[dict], tweet_counts: dict[str, int]) -> dict:
         for row in rows
         if row not in active
     )
+    active_by_follower_tier = Counter(
+        (row.get("followers_tier", "").strip().lower() or "unknown")
+        for row in active
+    )
+    inactive_by_follower_tier = Counter(
+        (row.get("followers_tier", "").strip().lower() or "unknown")
+        for row in rows
+        if row not in active
+    )
     active_without_rows = [
         row for row in active if tweet_counts.get(normalized_handle(row), 0) == 0
     ]
@@ -84,6 +93,8 @@ def build_report(rows: list[dict], tweet_counts: dict[str, int]) -> dict:
         "inactive_by_country": dict(sorted(inactive_by_country.items())),
         "active_by_beat": dict(sorted(active_by_beat.items())),
         "inactive_by_beat": dict(sorted(inactive_by_beat.items())),
+        "active_by_follower_tier": dict(sorted(active_by_follower_tier.items())),
+        "inactive_by_follower_tier": dict(sorted(inactive_by_follower_tier.items())),
         "active_without_tweets_by_country": dict(sorted(active_without_by_country.items())),
         "duplicate_names": duplicate_names(rows),
         "active_duplicate_names": duplicate_names(rows, active_only=True),
@@ -101,6 +112,8 @@ def print_report(report: dict, max_missing: int | None = None) -> None:
     print(f"Inactive by country: {report['inactive_by_country']}")
     print(f"Active by beat    : {report['active_by_beat']}")
     print(f"Inactive by beat  : {report['inactive_by_beat']}")
+    print(f"Active by tier    : {report['active_by_follower_tier']}")
+    print(f"Inactive by tier  : {report['inactive_by_follower_tier']}")
     print(f"Missing by country: {report['active_without_tweets_by_country']}")
     print(f"Active duplicate names: {len(report['active_duplicate_names'])}")
     for name, handles in sorted(report["active_duplicate_names"].items()):
