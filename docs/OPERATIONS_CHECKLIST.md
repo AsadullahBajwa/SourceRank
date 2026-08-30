@@ -12,6 +12,7 @@ python scripts/pipeline_health.py
 python scripts/pipeline_health.py --json
 python scripts/feed_health.py --status missing --limit 10
 python scripts/feed_health.py --status stale --limit 10
+python scripts/coverage_plan.py --limit 10 --priority tier --json
 ```
 
 Expected signals:
@@ -31,6 +32,8 @@ python scripts/config_check.py
 python scripts/journalists_check.py
 python scripts/rss_check.py
 python scripts/source_balance_check.py
+python scripts/source_coverage.py --country Pakistan --json
+python scripts/coverage_plan.py --limit 5 --priority tier --json
 python scripts/site_check.py
 python scripts/snapshot_check.py
 python scripts/extension_check.py
@@ -54,6 +57,7 @@ python scripts/feed_health.py --status stale --limit 10
 python scripts/source_gap_plan.py --limit 5
 python scripts/source_gap_plan.py --priority high --csv
 python scripts/coverage_plan.py --limit 10
+python scripts/coverage_plan.py --country Pakistan --limit 10 --priority tier --csv
 python scrapers/tweet_scraper.py --only-missing --limit 5
 OLLAMA_NUM_PARALLEL=4 python pipeline/claim_extractor.py --limit 500
 python scripts/claim_review.py --max-confidence 0.5 --csv > claim-review.csv

@@ -372,6 +372,7 @@ python scripts/audit_registry.py
 python scripts/audit_registry.py --max-missing 10
 python scripts/audit_registry.py --json
 python scripts/source_coverage.py
+python scripts/source_coverage.py --country Pakistan --json
 python scripts/source_coverage.py --json
 python scripts/source_gap_plan.py
 python scripts/source_gap_plan.py --country Pakistan --limit 5
@@ -384,6 +385,7 @@ python scripts/pipeline_health.py --json
 python scripts/feed_health.py --status missing --limit 10
 python scripts/feed_health.py --status stale --limit 10
 python scripts/feed_health.py --json
+python scripts/feed_health.py --strict  # optional release gate after feeds are fresh
 python scheduler.py --status
 python scheduler.py --status --json
 python scheduler.py --from-step extract --through-step score --dry-run
@@ -403,6 +405,8 @@ python scrapers/news_scraper.py --category public_broadcaster --limit 5 --dry-ru
 
 # Backfill active journalists that still have no local tweets
 python scripts/coverage_plan.py --limit 10
+python scripts/coverage_plan.py --limit 10 --priority tier --json
+python scripts/coverage_plan.py --country Pakistan --limit 10 --priority tier --csv
 python scrapers/tweet_scraper.py --only-missing --list-selected
 python scrapers/tweet_scraper.py --only-missing --limit 5 --list-selected
 python scrapers/tweet_scraper.py --only-missing

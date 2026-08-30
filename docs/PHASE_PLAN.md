@@ -14,7 +14,7 @@ Current blockers:
 
 Next actions:
 
-1. Run `python scripts/coverage_plan.py --limit 10`.
+1. Run `python scripts/coverage_plan.py --limit 10 --priority tier --json`.
 2. Backfill a small batch with `python scrapers/tweet_scraper.py --only-missing --limit 5`.
 3. Process new tweets with `python pipeline/claim_extractor.py --limit 500`.
 4. Export unresolved or low-confidence claims with
@@ -79,6 +79,7 @@ Current CI runs:
 - `python -m unittest discover -s tests -v`.
 - `python scripts/config_check.py` for scoring, scrape, path, and Ollama settings.
 - `python scripts/journalists_check.py` for roster schema, uniqueness, and balance.
+- `python scripts/coverage_plan.py --limit 5 --priority tier --json` for machine-readable backfill targeting.
 - `python scripts/rss_check.py` for source registry shape and dead host checks.
 - `python scripts/source_balance_check.py` for core RSS category and tier-1 country coverage.
 - `python scripts/source_coverage.py --json` for country, tier, language, and category balance.

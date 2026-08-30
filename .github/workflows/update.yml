@@ -34,6 +34,9 @@ jobs:
       - name: Validate journalist registry
         run: python scripts/journalists_check.py
 
+      - name: Smoke test backfill coverage plan
+        run: python scripts/coverage_plan.py --limit 5 --priority tier --json
+
       - name: Validate RSS source registry
         run: python scripts/rss_check.py
 
