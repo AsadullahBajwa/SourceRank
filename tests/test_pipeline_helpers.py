@@ -38,9 +38,10 @@ from scripts.audit_registry import build_report, normalized_handle, row_is_activ
 from scripts.claim_review import review_candidates, write_csv
 from scripts.config_check import validate_config
 from scripts.coverage_plan import (
-    missing_active_rows,
+    backfill_sort_key,
     build_coverage_plan,
     missing_active_handles,
+    missing_active_rows,
     write_csv as write_coverage_csv,
 )
 from scripts.extension_check import missing_extension_files, validate_manifest
@@ -559,6 +560,16 @@ class RegistryAuditTests(unittest.TestCase):
         self.assertEqual(missing[0]["name"], "Beta Example")
         self.assertTrue(output.startswith("handle,name,country,beat,followers_tier"))
         self.assertIn("Beta Example", output)
+
+    def test_backfill_plan_can_prioritize_high_follower_rows(self):
+        rows = [
+            {"handle": "zeta", "country": "US", "followers_tier": "low", "active": "true"},
+            {"handle": "alpha", "country": "US", "followers_tier": "high", "active": "true"},
+            {"handle": "beta", "country": "US", "followers_tier": "medium", "active": "true"},
+        ]
+        missing = missing_active_rows(rows, {}, priority="tier")
+        self.assertEqual([row["handle"] for row in missing], ["alpha", "beta", "zeta"])
+        self.assertLess(backfill_sort_key(rows[1], priority="tier"), backfill_sort_key(rows[0], priority="tier"))
 
     def test_registry_helpers_normalize_whitespace_and_case(self):
         row = {"handle": " Alpha ", "active": " TRUE "}
