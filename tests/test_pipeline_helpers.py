@@ -26,6 +26,7 @@ from pipeline.verifier import (
 from scrapers.news_scraper import get_db as get_news_db, migrate_articles_schema, select_sources
 from scrapers.tweet_scraper import select_journalists
 from scheduler import (
+    _backfill_status,
     _feed_health_status,
     _history_status,
     _source_gap_status,
@@ -191,6 +192,16 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(status["feed_missing_sources"], 7)
         self.assertEqual(status["feed_stale_sources"], 0)
         self.assertEqual(len(status["top_feed_problems"]), 5)
+
+    def test_backfill_status_prioritizes_top_missing_handles(self):
+        rows = [
+            {"handle": "low", "followers_tier": "low", "active": "true"},
+            {"handle": "high", "followers_tier": "high", "active": "true"},
+            {"handle": "covered", "followers_tier": "high", "active": "true"},
+        ]
+        status = _backfill_status(rows, {"covered": 2})
+        self.assertEqual(status["backfill_needed"], 2)
+        self.assertEqual(status["top_backfill_handles"], ["high", "low"])
 
     def test_run_step_dry_run_does_not_spawn_process(self):
         with mock.patch("scheduler.subprocess.run") as run:

@@ -122,6 +122,20 @@ def _feed_health_status(source_rows: list[dict]) -> dict[str, object]:
     }
 
 
+def _backfill_status(journalist_rows: list[dict], tweet_counts: dict[str, int]) -> dict[str, object]:
+    from scripts.coverage_plan import missing_active_handles
+
+    handles = missing_active_handles(
+        journalist_rows,
+        tweet_counts,
+        priority="tier",
+    )
+    return {
+        "backfill_needed": len(handles),
+        "top_backfill_handles": handles[:5],
+    }
+
+
 def pipeline_status() -> dict:
     import config
     from scripts.audit_registry import build_report, load_tweet_counts
@@ -135,7 +149,8 @@ def pipeline_status() -> dict:
             1 for row in journalist_rows
             if row.get("active", "true").lower() == "true"
         )
-    registry = build_report(journalist_rows, load_tweet_counts()) if journalist_rows else {}
+    tweet_counts = load_tweet_counts()
+    registry = build_report(journalist_rows, tweet_counts) if journalist_rows else {}
 
     original_tweets = _count_rows(config.TWEETS_DB, "SELECT COUNT(*) FROM tweets WHERE is_retweet = 0")
     processed_tweets = _count_rows(config.CLAIMS_DB, "SELECT COUNT(*) FROM processed_tweets")
@@ -163,6 +178,8 @@ def pipeline_status() -> dict:
         "leaderboard_tracked": tracked,
         "leaderboard_ranked": ranked,
     }
+    if journalist_rows:
+        status.update(_backfill_status(journalist_rows, tweet_counts))
     if os.path.exists(config.RSS_SOURCES_CSV):
         with open(config.RSS_SOURCES_CSV, newline="", encoding="utf-8") as f:
             source_rows = list(csv.DictReader(f))
