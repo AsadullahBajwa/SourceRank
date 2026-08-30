@@ -37,7 +37,12 @@ from scheduler import (
 from scripts.audit_registry import build_report, normalized_handle, row_is_active
 from scripts.claim_review import review_candidates, write_csv
 from scripts.config_check import validate_config
-from scripts.coverage_plan import build_coverage_plan, missing_active_handles
+from scripts.coverage_plan import (
+    missing_active_rows,
+    build_coverage_plan,
+    missing_active_handles,
+    write_csv as write_coverage_csv,
+)
 from scripts.extension_check import missing_extension_files, validate_manifest
 from scripts.feed_health import (
     build_feed_health_report,
@@ -535,6 +540,25 @@ class RegistryAuditTests(unittest.TestCase):
         self.assertEqual(plan["country"], "Pakistan")
         self.assertEqual(plan["missing_count"], 1)
         self.assertEqual(plan["handles"], ["beta"])
+
+    def test_missing_active_rows_and_csv_keep_metadata(self):
+        rows = [
+            {
+                "handle": "beta",
+                "name": "Beta Example",
+                "country": "Pakistan",
+                "beat": "Politics",
+                "followers_tier": "medium",
+                "active": "true",
+            },
+        ]
+        missing = missing_active_rows(rows, {})
+        stream = io.StringIO()
+        write_coverage_csv(missing, stream)
+        output = stream.getvalue()
+        self.assertEqual(missing[0]["name"], "Beta Example")
+        self.assertTrue(output.startswith("handle,name,country,beat,followers_tier"))
+        self.assertIn("Beta Example", output)
 
     def test_registry_helpers_normalize_whitespace_and_case(self):
         row = {"handle": " Alpha ", "active": " TRUE "}

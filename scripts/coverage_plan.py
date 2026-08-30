@@ -8,6 +8,7 @@ Usage:
 """
 
 import argparse
+import csv
 import json
 import os
 import sys
@@ -17,20 +18,31 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scripts.audit_registry import load_rows, load_tweet_counts
 from scripts.audit_registry import normalized_handle, row_is_active
 
+CSV_FIELDS = ["handle", "name", "country", "beat", "followers_tier"]
 
-def missing_active_handles(rows: list[dict], tweet_counts: dict[str, int],
-                           country: str | None = None,
-                           limit: int | None = None) -> list[str]:
+
+def missing_active_rows(rows: list[dict], tweet_counts: dict[str, int],
+                        country: str | None = None,
+                        limit: int | None = None) -> list[dict]:
     country_filter = country.strip().lower() if country else None
     missing = [
-        row["handle"].strip()
+        row
         for row in rows
         if row_is_active(row)
         and (not country_filter or row.get("country", "").strip().lower() == country_filter)
         and tweet_counts.get(normalized_handle(row), 0) == 0
     ]
-    missing = sorted(missing, key=str.lower)
+    missing = sorted(missing, key=lambda row: row.get("handle", "").strip().lower())
     return missing[:limit] if limit and limit > 0 else missing
+
+
+def missing_active_handles(rows: list[dict], tweet_counts: dict[str, int],
+                           country: str | None = None,
+                           limit: int | None = None) -> list[str]:
+    return [
+        row["handle"].strip()
+        for row in missing_active_rows(rows, tweet_counts, country=country, limit=limit)
+    ]
 
 
 def build_coverage_plan(rows: list[dict], tweet_counts: dict[str, int],
@@ -49,21 +61,37 @@ def build_coverage_plan(rows: list[dict], tweet_counts: dict[str, int],
     }
 
 
+def write_csv(rows: list[dict], stream) -> None:
+    writer = csv.DictWriter(stream, fieldnames=CSV_FIELDS, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="List active handles that need tweet backfill.")
     parser.add_argument("--country", help="Filter missing handles by country")
     parser.add_argument("--limit", type=int, help="Maximum handles to print")
-    parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    output_group.add_argument("--csv", action="store_true", help="Print spreadsheet-ready CSV")
     args = parser.parse_args()
 
+    rows = load_rows()
+    tweet_counts = load_tweet_counts()
     plan = build_coverage_plan(
-        load_rows(),
-        load_tweet_counts(),
+        rows,
+        tweet_counts,
         country=args.country,
         limit=args.limit,
     )
     if args.json:
         print(json.dumps(plan, indent=2))
+        return
+    if args.csv:
+        write_csv(
+            missing_active_rows(rows, tweet_counts, country=args.country, limit=args.limit),
+            sys.stdout,
+        )
         return
     for handle in plan["handles"]:
         print(handle)
