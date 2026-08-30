@@ -57,12 +57,14 @@ def build_source_report(rows: list[dict]) -> dict:
     )
     languages_by_country: dict[str, set[str]] = {}
     categories_by_country: dict[str, set[str]] = {}
+    category_matrix: dict[str, Counter] = {}
     for row in rows:
         country = row.get("country", "unknown").strip() or "unknown"
         language = row.get("language", "unknown").strip() or "unknown"
         category = normalize_category(row.get("category", "")) or "unknown"
         languages_by_country.setdefault(country, set()).add(language)
         categories_by_country.setdefault(country, set()).add(category)
+        category_matrix.setdefault(country, Counter())[category] += 1
     return {
         "total_sources": len(rows),
         "by_country": dict(sorted(by_country.items())),
@@ -79,6 +81,10 @@ def build_source_report(rows: list[dict]) -> dict:
             country: sorted(categories)
             for country, categories in sorted(categories_by_country.items())
         },
+        "category_matrix": {
+            country: dict(sorted(counts.items()))
+            for country, counts in sorted(category_matrix.items())
+        },
     }
 
 
@@ -92,6 +98,7 @@ def print_report(report: dict) -> None:
     print(f"Tier-1 gaps      : {report['tier1_missing_countries']}")
     print(f"Languages/country: {report['languages_by_country']}")
     print(f"Categories/country: {report['categories_by_country']}")
+    print(f"Category matrix  : {report['category_matrix']}")
 
 
 def main() -> None:

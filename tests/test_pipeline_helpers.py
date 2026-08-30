@@ -736,6 +736,13 @@ class NewsScraperTests(unittest.TestCase):
         self.assertEqual(report["languages_by_country"]["Pakistan"], ["en", "ur"])
         self.assertEqual(report["by_category"], {"newspaper": 1, "tv": 1, "wire": 1})
         self.assertEqual(report["categories_by_country"]["Pakistan"], ["newspaper", "tv"])
+        self.assertEqual(
+            report["category_matrix"],
+            {
+                "Pakistan": {"newspaper": 1, "tv": 1},
+                "global": {"wire": 1},
+            },
+        )
 
     def test_build_source_report_normalizes_blank_values(self):
         report = build_source_report([
