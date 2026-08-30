@@ -8,6 +8,7 @@ Usage:
 """
 
 import argparse
+import json
 import os
 import sys
 
@@ -32,19 +33,39 @@ def missing_active_handles(rows: list[dict], tweet_counts: dict[str, int],
     return missing[:limit] if limit and limit > 0 else missing
 
 
+def build_coverage_plan(rows: list[dict], tweet_counts: dict[str, int],
+                        country: str | None = None,
+                        limit: int | None = None) -> dict[str, object]:
+    handles = missing_active_handles(
+        rows,
+        tweet_counts,
+        country=country,
+        limit=limit,
+    )
+    return {
+        "country": country or "all",
+        "missing_count": len(handles),
+        "handles": handles,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="List active handles that need tweet backfill.")
     parser.add_argument("--country", help="Filter missing handles by country")
     parser.add_argument("--limit", type=int, help="Maximum handles to print")
+    parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
     args = parser.parse_args()
 
-    handles = missing_active_handles(
+    plan = build_coverage_plan(
         load_rows(),
         load_tweet_counts(),
         country=args.country,
         limit=args.limit,
     )
-    for handle in handles:
+    if args.json:
+        print(json.dumps(plan, indent=2))
+        return
+    for handle in plan["handles"]:
         print(handle)
 
 
