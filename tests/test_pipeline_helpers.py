@@ -48,6 +48,7 @@ from scripts.extension_check import missing_extension_files, validate_manifest
 from scripts.feed_health import (
     build_feed_health_report,
     filter_problems,
+    has_feed_problems,
     latest_logs_by_source,
     load_feed_logs,
 )
@@ -1225,6 +1226,10 @@ class FeedHealthTests(unittest.TestCase):
             ["BBC"],
         )
         self.assertEqual(filter_problems(problems, limit=1), [problems[0]])
+
+    def test_has_feed_problems_uses_full_report_count(self):
+        self.assertFalse(has_feed_problems({"problem_count": 0}))
+        self.assertTrue(has_feed_problems({"problem_count": 2, "problems": []}))
 
 
 class SiteCheckTests(unittest.TestCase):

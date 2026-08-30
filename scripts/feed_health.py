@@ -5,6 +5,7 @@ Summarize RSS feed fetch freshness and failures from claims.db.
 Usage:
     python scripts/feed_health.py
     python scripts/feed_health.py --status missing --limit 10
+    python scripts/feed_health.py --strict
     python scripts/feed_health.py --json
 """
 
@@ -137,6 +138,10 @@ def filter_problems(
     return selected
 
 
+def has_feed_problems(report: dict) -> bool:
+    return int(report.get("problem_count") or 0) > 0
+
+
 def print_report(report: dict) -> None:
     print(f"Total sources : {report['total_sources']}")
     print(f"Fetched sources: {report['fetched_sources']}")
@@ -157,6 +162,8 @@ def main() -> None:
     parser.add_argument("--status", choices=["missing", "stale", "warning", "error"],
                         help="Filter problem feeds by status")
     parser.add_argument("--limit", type=int, help="Maximum problem feeds to print")
+    parser.add_argument("--strict", action="store_true",
+                        help="Exit non-zero when any feed problem is present")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
     args = parser.parse_args()
 
@@ -175,6 +182,8 @@ def main() -> None:
         print(json.dumps(report, indent=2, sort_keys=True))
     else:
         print_report(report)
+    if args.strict and has_feed_problems(report):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
