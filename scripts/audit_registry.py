@@ -62,6 +62,12 @@ def build_report(rows: list[dict], tweet_counts: dict[str, int]) -> dict:
     active = [row for row in rows if row_is_active(row)]
     active_by_country = Counter(row["country"] for row in active)
     inactive_by_country = Counter(row["country"] for row in rows if row not in active)
+    active_by_beat = Counter((row.get("beat", "").strip() or "unknown") for row in active)
+    inactive_by_beat = Counter(
+        (row.get("beat", "").strip() or "unknown")
+        for row in rows
+        if row not in active
+    )
     active_without_rows = [
         row for row in active if tweet_counts.get(normalized_handle(row), 0) == 0
     ]
@@ -76,6 +82,8 @@ def build_report(rows: list[dict], tweet_counts: dict[str, int]) -> dict:
         "active_coverage_pct": round((active_with_tweets / len(active)) * 100, 1) if active else 0.0,
         "active_by_country": dict(sorted(active_by_country.items())),
         "inactive_by_country": dict(sorted(inactive_by_country.items())),
+        "active_by_beat": dict(sorted(active_by_beat.items())),
+        "inactive_by_beat": dict(sorted(inactive_by_beat.items())),
         "active_without_tweets_by_country": dict(sorted(active_without_by_country.items())),
         "duplicate_names": duplicate_names(rows),
         "active_duplicate_names": duplicate_names(rows, active_only=True),
@@ -91,6 +99,8 @@ def print_report(report: dict, max_missing: int | None = None) -> None:
           f"({report['active_coverage_pct']}%)")
     print(f"Active by country : {report['active_by_country']}")
     print(f"Inactive by country: {report['inactive_by_country']}")
+    print(f"Active by beat    : {report['active_by_beat']}")
+    print(f"Inactive by beat  : {report['inactive_by_beat']}")
     print(f"Missing by country: {report['active_without_tweets_by_country']}")
     print(f"Active duplicate names: {len(report['active_duplicate_names'])}")
     for name, handles in sorted(report["active_duplicate_names"].items()):
