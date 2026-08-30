@@ -758,6 +758,17 @@ class NewsScraperTests(unittest.TestCase):
             ["BBC"],
         )
 
+    def test_filter_sources_can_filter_by_country_and_category(self):
+        rows = [
+            {"name": "Dawn", "country": "Pakistan", "category": "newspaper"},
+            {"name": "NYT", "country": "US", "category": "newspaper"},
+            {"name": "BBC", "country": "global", "category": "public_broadcaster"},
+        ]
+        self.assertEqual(
+            [row["name"] for row in filter_sources(rows, country=" pakistan ", category="Newspaper")],
+            ["Dawn"],
+        )
+
 
 class RssCheckTests(unittest.TestCase):
     def test_validate_source_rows_accepts_clean_rows(self):

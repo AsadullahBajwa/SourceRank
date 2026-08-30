@@ -4,6 +4,7 @@ Summarize RSS source coverage by country, language, and tier.
 
 Usage:
     python scripts/source_coverage.py
+    python scripts/source_coverage.py --country Pakistan
     python scripts/source_coverage.py --category wire
     python scripts/source_coverage.py --json
 """
@@ -27,13 +28,17 @@ def load_sources(path: str) -> list[dict]:
         return list(csv.DictReader(f))
 
 
-def filter_sources(rows: list[dict], category: str | None = None) -> list[dict]:
-    if not category:
-        return rows
-    normalized = normalize_category(category)
+def filter_sources(
+    rows: list[dict],
+    category: str | None = None,
+    country: str | None = None,
+) -> list[dict]:
+    normalized_category = normalize_category(category) if category else None
+    normalized_country = country.strip().lower() if country else None
     return [
         row for row in rows
-        if normalize_category(row.get("category", "")) == normalized
+        if (not normalized_category or normalize_category(row.get("category", "")) == normalized_category)
+        and (not normalized_country or row.get("country", "").strip().lower() == normalized_country)
     ]
 
 
@@ -91,12 +96,17 @@ def print_report(report: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Summarize RSS source coverage.")
+    parser.add_argument("--country", help="Filter report by source country")
     parser.add_argument("--category", help="Filter report by source category")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
     args = parser.parse_args()
 
     report = build_source_report(
-        filter_sources(load_sources(config.RSS_SOURCES_CSV), category=args.category)
+        filter_sources(
+            load_sources(config.RSS_SOURCES_CSV),
+            category=args.category,
+            country=args.country,
+        )
     )
     if args.json:
         print(json.dumps(report, indent=2))
