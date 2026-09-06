@@ -546,13 +546,23 @@ class RegistryAuditTests(unittest.TestCase):
 
     def test_build_coverage_plan_returns_json_ready_payload(self):
         rows = [
-            {"handle": "alpha", "country": "US", "active": "true"},
-            {"handle": "beta", "country": "Pakistan", "active": "true"},
+            {"handle": "alpha", "country": "US", "beat": "Politics", "active": "true"},
+            {"handle": "beta", "country": "Pakistan", "beat": "Politics", "active": "true"},
         ]
-        plan = build_coverage_plan(rows, {"alpha": 2}, country="Pakistan")
+        plan = build_coverage_plan(rows, {"alpha": 2}, country="Pakistan", beat="Politics")
         self.assertEqual(plan["country"], "Pakistan")
+        self.assertEqual(plan["beat"], "Politics")
         self.assertEqual(plan["missing_count"], 1)
         self.assertEqual(plan["handles"], ["beta"])
+
+    def test_missing_active_handles_can_filter_by_beat(self):
+        rows = [
+            {"handle": "alpha", "beat": "Politics", "active": "true"},
+            {"handle": "beta", "beat": "Finance", "active": "true"},
+            {"handle": "gamma", "beat": "Politics", "active": "false"},
+        ]
+        handles = missing_active_handles(rows, {}, beat=" politics ")
+        self.assertEqual(handles, ["alpha"])
 
     def test_missing_active_rows_and_csv_keep_metadata(self):
         rows = [

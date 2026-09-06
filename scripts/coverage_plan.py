@@ -5,6 +5,7 @@ Print the next active journalist handles that need tweet backfill.
 Usage:
     python scripts/coverage_plan.py
     python scripts/coverage_plan.py --country Pakistan --limit 10
+    python scripts/coverage_plan.py --beat Politics --priority tier
 """
 
 import argparse
@@ -32,14 +33,17 @@ def backfill_sort_key(row: dict, priority: str = "handle") -> tuple:
 
 def missing_active_rows(rows: list[dict], tweet_counts: dict[str, int],
                         country: str | None = None,
+                        beat: str | None = None,
                         limit: int | None = None,
                         priority: str = "handle") -> list[dict]:
     country_filter = country.strip().lower() if country else None
+    beat_filter = beat.strip().lower() if beat else None
     missing = [
         row
         for row in rows
         if row_is_active(row)
         and (not country_filter or row.get("country", "").strip().lower() == country_filter)
+        and (not beat_filter or row.get("beat", "").strip().lower() == beat_filter)
         and tweet_counts.get(normalized_handle(row), 0) == 0
     ]
     missing = sorted(missing, key=lambda row: backfill_sort_key(row, priority=priority))
@@ -48,6 +52,7 @@ def missing_active_rows(rows: list[dict], tweet_counts: dict[str, int],
 
 def missing_active_handles(rows: list[dict], tweet_counts: dict[str, int],
                            country: str | None = None,
+                           beat: str | None = None,
                            limit: int | None = None,
                            priority: str = "handle") -> list[str]:
     return [
@@ -56,6 +61,7 @@ def missing_active_handles(rows: list[dict], tweet_counts: dict[str, int],
             rows,
             tweet_counts,
             country=country,
+            beat=beat,
             limit=limit,
             priority=priority,
         )
@@ -64,17 +70,20 @@ def missing_active_handles(rows: list[dict], tweet_counts: dict[str, int],
 
 def build_coverage_plan(rows: list[dict], tweet_counts: dict[str, int],
                         country: str | None = None,
+                        beat: str | None = None,
                         limit: int | None = None,
                         priority: str = "handle") -> dict[str, object]:
     handles = missing_active_handles(
         rows,
         tweet_counts,
         country=country,
+        beat=beat,
         limit=limit,
         priority=priority,
     )
     return {
         "country": country or "all",
+        "beat": beat or "all",
         "priority": priority,
         "missing_count": len(handles),
         "handles": handles,
@@ -90,6 +99,7 @@ def write_csv(rows: list[dict], stream) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="List active handles that need tweet backfill.")
     parser.add_argument("--country", help="Filter missing handles by country")
+    parser.add_argument("--beat", help="Filter missing handles by beat")
     parser.add_argument("--limit", type=int, help="Maximum handles to print")
     parser.add_argument(
         "--priority",
@@ -108,6 +118,7 @@ def main() -> None:
         rows,
         tweet_counts,
         country=args.country,
+        beat=args.beat,
         limit=args.limit,
         priority=args.priority,
     )
@@ -120,6 +131,7 @@ def main() -> None:
                 rows,
                 tweet_counts,
                 country=args.country,
+                beat=args.beat,
                 limit=args.limit,
                 priority=args.priority,
             ),
