@@ -83,6 +83,14 @@ def build_report(rows: list[dict], tweet_counts: dict[str, int]) -> dict:
     active_without_tweets = [row["handle"].strip() for row in active_without_rows]
     active_with_tweets = len(active) - len(active_without_tweets)
     active_without_by_country = Counter(row["country"] for row in active_without_rows)
+    active_without_by_beat = Counter(
+        (row.get("beat", "").strip() or "unknown")
+        for row in active_without_rows
+    )
+    active_without_by_follower_tier = Counter(
+        (row.get("followers_tier", "").strip().lower() or "unknown")
+        for row in active_without_rows
+    )
     return {
         "total": len(rows),
         "active": len(active),
@@ -96,6 +104,10 @@ def build_report(rows: list[dict], tweet_counts: dict[str, int]) -> dict:
         "active_by_follower_tier": dict(sorted(active_by_follower_tier.items())),
         "inactive_by_follower_tier": dict(sorted(inactive_by_follower_tier.items())),
         "active_without_tweets_by_country": dict(sorted(active_without_by_country.items())),
+        "active_without_tweets_by_beat": dict(sorted(active_without_by_beat.items())),
+        "active_without_tweets_by_follower_tier": dict(
+            sorted(active_without_by_follower_tier.items())
+        ),
         "duplicate_names": duplicate_names(rows),
         "active_duplicate_names": duplicate_names(rows, active_only=True),
         "active_without_tweets": sorted(active_without_tweets, key=str.lower),
@@ -115,6 +127,8 @@ def print_report(report: dict, max_missing: int | None = None) -> None:
     print(f"Active by tier    : {report['active_by_follower_tier']}")
     print(f"Inactive by tier  : {report['inactive_by_follower_tier']}")
     print(f"Missing by country: {report['active_without_tweets_by_country']}")
+    print(f"Missing by beat   : {report['active_without_tweets_by_beat']}")
+    print(f"Missing by tier   : {report['active_without_tweets_by_follower_tier']}")
     print(f"Active duplicate names: {len(report['active_duplicate_names'])}")
     for name, handles in sorted(report["active_duplicate_names"].items()):
         print(f"  - {name}: {', '.join(handles)}")
