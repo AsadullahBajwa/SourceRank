@@ -4,6 +4,7 @@ Summarize RSS feed fetch freshness and failures from claims.db.
 
 Usage:
     python scripts/feed_health.py
+    python scripts/feed_health.py --country Pakistan --category digital_native
     python scripts/feed_health.py --status missing --limit 10
     python scripts/feed_health.py --strict
     python scripts/feed_health.py --json
@@ -19,6 +20,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 from scripts.source_coverage import load_sources
+from scripts.source_taxonomy import normalize_category
 from time_utils import parse_utc, utc_now
 
 
@@ -71,16 +73,27 @@ def build_feed_health_report(
 ) -> dict:
     now = now or utc_now()
     latest = latest_logs_by_source(log_rows)
-    sources = [row.get("name", "").strip() for row in source_rows if row.get("name", "").strip()]
+    sources = [
+        {
+            "name": row.get("name", "").strip(),
+            "country": row.get("country", "").strip(),
+            "category": normalize_category(row.get("category", "")),
+        }
+        for row in source_rows
+        if row.get("name", "").strip()
+    ]
     problems = []
     status_counts = {"ok": 0, "warning": 0, "error": 0, "missing": 0, "stale": 0}
 
-    for source_name in sorted(sources, key=str.lower):
+    for source in sorted(sources, key=lambda row: row["name"].lower()):
+        source_name = source["name"]
         log_row = latest.get(source_name)
         if not log_row:
             status_counts["missing"] += 1
             problems.append({
                 "source_name": source_name,
+                "country": source["country"],
+                "category": source["category"],
                 "status": "missing",
                 "is_stale": False,
                 "age_hours": None,
@@ -100,6 +113,8 @@ def build_feed_health_report(
         if status != "ok" or is_stale:
             problems.append({
                 "source_name": source_name,
+                "country": source["country"],
+                "category": source["category"],
                 "status": status,
                 "is_stale": is_stale,
                 "age_hours": age_hours,
@@ -121,9 +136,23 @@ def build_feed_health_report(
 def filter_problems(
     problems: list[dict],
     status: str | None = None,
+    country: str | None = None,
+    category: str | None = None,
     limit: int | None = None,
 ) -> list[dict]:
     selected = problems
+    if country:
+        normalized_country = country.strip().lower()
+        selected = [
+            problem for problem in selected
+            if str(problem.get("country", "")).strip().lower() == normalized_country
+        ]
+    if category:
+        normalized_category = normalize_category(category)
+        selected = [
+            problem for problem in selected
+            if normalize_category(problem.get("category", "")) == normalized_category
+        ]
     if status:
         normalized = status.strip().lower()
         if normalized == "stale":
@@ -151,6 +180,7 @@ def print_report(report: dict) -> None:
         age = problem["age_hours"] if problem["age_hours"] is not None else "unknown"
         print(
             f"- {problem['source_name']}: {problem['status']} "
+            f"country={problem.get('country', '')} category={problem.get('category', '')} "
             f"age={age}h entries={problem['entry_count']} new={problem['new_count']}"
         )
 
@@ -161,6 +191,8 @@ def main() -> None:
                         help="Hours after which a feed log is considered stale")
     parser.add_argument("--status", choices=["missing", "stale", "warning", "error"],
                         help="Filter problem feeds by status")
+    parser.add_argument("--country", help="Filter problem feeds by source country")
+    parser.add_argument("--category", help="Filter problem feeds by source category")
     parser.add_argument("--limit", type=int, help="Maximum problem feeds to print")
     parser.add_argument("--strict", action="store_true",
                         help="Exit non-zero when any feed problem is present")
@@ -175,6 +207,8 @@ def main() -> None:
     report["problems"] = filter_problems(
         report["problems"],
         status=args.status,
+        country=args.country,
+        category=args.category,
         limit=args.limit,
     )
     report["shown_problem_count"] = len(report["problems"])

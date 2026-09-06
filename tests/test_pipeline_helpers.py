@@ -1200,9 +1200,9 @@ class FeedHealthTests(unittest.TestCase):
     def test_build_feed_health_report_flags_missing_and_stale_sources(self):
         report = build_feed_health_report(
             [
-                {"name": "Reuters"},
-                {"name": "Dawn"},
-                {"name": "BBC"},
+                {"name": "Reuters", "country": "global", "category": "wire"},
+                {"name": "Dawn", "country": "Pakistan", "category": "newspaper"},
+                {"name": "BBC", "country": "global", "category": "public_broadcaster"},
             ],
             [
                 {
@@ -1249,6 +1249,19 @@ class FeedHealthTests(unittest.TestCase):
             ["BBC"],
         )
         self.assertEqual(filter_problems(problems, limit=1), [problems[0]])
+
+    def test_filter_problems_can_select_country_and_category(self):
+        problems = [
+            {"source_name": "Dawn", "country": "Pakistan", "category": "newspaper", "status": "missing"},
+            {"source_name": "Naya Daur", "country": "Pakistan", "category": "digital_native", "status": "missing"},
+            {"source_name": "NYT", "country": "US", "category": "newspaper", "status": "missing"},
+        ]
+        selected = filter_problems(
+            problems,
+            country="pakistan",
+            category="Digital Native",
+        )
+        self.assertEqual([problem["source_name"] for problem in selected], ["Naya Daur"])
 
     def test_has_feed_problems_uses_full_report_count(self):
         self.assertFalse(has_feed_problems({"problem_count": 0}))
