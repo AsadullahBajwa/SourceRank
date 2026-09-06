@@ -12,7 +12,9 @@ python scripts/pipeline_health.py
 python scripts/pipeline_health.py --json
 python scripts/feed_health.py --status missing --limit 10
 python scripts/feed_health.py --status stale --limit 10
+python scripts/feed_health.py --country Pakistan --category digital_native --limit 10 --json
 python scripts/coverage_plan.py --limit 10 --priority tier --json
+python scripts/coverage_plan.py --beat Politics --limit 10 --priority tier --json
 ```
 
 Expected signals:
@@ -54,9 +56,11 @@ python scrapers/news_scraper.py
 python scrapers/news_scraper.py --category wire --dry-run
 python scrapers/news_scraper.py --category public_broadcaster --limit 5 --dry-run
 python scripts/feed_health.py --status stale --limit 10
+python scripts/feed_health.py --country Pakistan --category digital_native --limit 10 --json
 python scripts/source_gap_plan.py --limit 5
 python scripts/source_gap_plan.py --priority high --csv
 python scripts/coverage_plan.py --limit 10
+python scripts/coverage_plan.py --beat Politics --limit 10 --priority tier --json
 python scripts/coverage_plan.py --country Pakistan --limit 10 --priority tier --csv
 python scrapers/tweet_scraper.py --only-missing --limit 5
 OLLAMA_NUM_PARALLEL=4 python pipeline/claim_extractor.py --limit 500

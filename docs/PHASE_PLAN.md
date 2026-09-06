@@ -14,7 +14,7 @@ Current blockers:
 
 Next actions:
 
-1. Run `python scripts/coverage_plan.py --limit 10 --priority tier --json`.
+1. Run `python scripts/coverage_plan.py --beat Politics --limit 10 --priority tier --json`.
 2. Backfill a small batch with `python scrapers/tweet_scraper.py --only-missing --limit 5`.
 3. Process new tweets with `python pipeline/claim_extractor.py --limit 500`.
 4. Export unresolved or low-confidence claims with
@@ -80,11 +80,13 @@ Current CI runs:
 - `python scripts/config_check.py` for scoring, scrape, path, and Ollama settings.
 - `python scripts/journalists_check.py` for roster schema, uniqueness, and balance.
 - `python scripts/coverage_plan.py --limit 5 --priority tier --json` for machine-readable backfill targeting.
+- `python scripts/coverage_plan.py --beat Politics --limit 5 --priority tier --json` for beat-focused backfill targeting.
 - `python scripts/rss_check.py` for source registry shape and dead host checks.
 - `python scripts/source_balance_check.py` for core RSS category and tier-1 country coverage.
 - `python scripts/source_coverage.py --json` for country, tier, language, and category balance.
 - `python scripts/source_gap_plan.py --json` and `--csv` for actionable RSS source expansion gaps.
 - `python scripts/feed_health.py --json` for missing, stale, warning, and error-prone RSS fetches.
+- `python scripts/feed_health.py --country Pakistan --category digital_native --limit 5 --json` for filtered feed freshness checks.
 - `python scripts/site_check.py` for static site pages and JSON artifacts.
 - `python scripts/snapshot_check.py` for score invariants and history integrity.
 - `python scripts/extension_check.py` for Manifest V3 scaffold checks.

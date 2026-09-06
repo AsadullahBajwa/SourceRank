@@ -52,6 +52,9 @@ jobs:
       - name: Smoke test RSS feed health
         run: python scripts/feed_health.py --json
 
+      - name: Smoke test filtered RSS feed health
+        run: python scripts/feed_health.py --country Pakistan --category digital_native --limit 5 --json
+
       - name: Validate static site artifacts
         run: python scripts/site_check.py
 
