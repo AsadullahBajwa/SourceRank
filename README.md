@@ -2,6 +2,9 @@
 
 **A journalist credibility scoring system for X (Twitter)**
 
+[![Static validation](https://github.com/AsadullahBajwa/SourceRank/actions/workflows/update.yml/badge.svg?branch=main)](https://github.com/AsadullahBajwa/SourceRank/actions/workflows/update.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ![SourceRank leaderboard preview](docs/assets/sourcerank-leaderboard-preview.svg)
 
 SourceRank tracks what journalists claim on X, verifies whether those claims turned out to be true, and computes a transparent credibility score for each journalist. It is designed as a zero-cost, local-first data pipeline: no paid APIs, no cloud compute, SQLite for storage, Ollama for local LLM extraction, and GitHub Pages for publishing.
