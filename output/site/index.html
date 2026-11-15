@@ -152,6 +152,7 @@
     .v-confirmed { background: #22c55e; }
     .v-refuted   { background: #ef4444; }
     .v-pending   { background: #3b82f6; }
+    .v-unverified { background: #93c5fd; }
     .v-expired   { background: #6b7280; }
 
     .dataTables_wrapper .dataTables_filter input {
@@ -245,12 +246,15 @@ const gradeText = j => isEligible(j) ? j.grade : 'N/R';
 
 function verdictBar(j) {
   const total = j.total_claims || 1;
-  const pct = v => Math.round((v / total) * 100);
+  const pct = v => Math.round(((v || 0) / total) * 100);
+  // Older scores.json snapshots predate the unverified count.
+  const unverified = j.unverified || 0;
   return `
-    <div class="verdict-bar" title="Confirmed: ${j.confirmed} | Refuted: ${j.refuted} | Pending: ${j.pending} | Expired: ${j.expired}">
+    <div class="verdict-bar" title="Confirmed: ${j.confirmed} | Refuted: ${j.refuted} | Pending: ${j.pending} | Unverified: ${unverified} | Expired: ${j.expired}">
       <div class="v-confirmed" style="width:${pct(j.confirmed)}%"></div>
       <div class="v-refuted"   style="width:${pct(j.refuted)}%"></div>
       <div class="v-pending"   style="width:${pct(j.pending)}%"></div>
+      <div class="v-unverified" style="width:${pct(unverified)}%"></div>
       <div class="v-expired"   style="width:${pct(j.expired)}%"></div>
     </div>`;
 }
