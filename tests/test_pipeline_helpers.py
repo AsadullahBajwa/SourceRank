@@ -127,6 +127,22 @@ class ScorerTests(unittest.TestCase):
         self.assertTrue(score["eligible"])
         self.assertEqual(score["min_resolved_claims"], 1)
 
+    def test_score_journalist_verdict_counts_cover_every_claim(self):
+        conn = sqlite3.connect(":memory:")
+        conn.execute("CREATE TABLE tweets (handle TEXT, created_at TEXT, is_retweet INTEGER)")
+        verdicts = ["CONFIRMED", "REFUTED", "PENDING", "UNVERIFIED", "UNVERIFIED", "EXPIRED"]
+        claims = [
+            {"verdict": verdict, "claim_type": "general", "verdict_source": ""}
+            for verdict in verdicts
+        ]
+        score = score_journalist({"handle": "alpha"}, claims, conn)
+        conn.close()
+        self.assertEqual(score["unverified"], 2)
+        counted = sum(
+            score[key] for key in ("confirmed", "refuted", "pending", "unverified", "expired")
+        )
+        self.assertEqual(counted, score["total_claims"])
+
     def test_public_claim_record_limits_fields_for_site_export(self):
         record = public_claim_record({
             "id": "c1",
