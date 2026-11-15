@@ -11,7 +11,15 @@ from unittest import mock
 import config
 from find_handles import zero_tweet_handles
 from pipeline.claim_extractor import normalize_claim_type, normalize_confidence, quick_skip
-from pipeline.scorer import compute_source_quality, public_claim_record, score_journalist
+from pipeline.scorer import (
+    compute_accuracy_rate,
+    compute_correction_score,
+    compute_prediction_score,
+    compute_source_quality,
+    public_claim_record,
+    score_journalist,
+    score_to_grade,
+)
 from pipeline.verifier import (
     VERDICT_REFUTED,
     backfill_tweet_created_at,
@@ -101,6 +109,62 @@ class ClaimExtractorTests(unittest.TestCase):
 
 
 class ScorerTests(unittest.TestCase):
+    @staticmethod
+    def _claim(verdict, claim_type="general"):
+        return {"verdict": verdict, "claim_type": claim_type, "verdict_source": ""}
+
+    def test_accuracy_rate_ignores_unresolved_claims(self):
+        claims = [
+            self._claim("CONFIRMED"),
+            self._claim("CONFIRMED"),
+            self._claim("CONFIRMED"),
+            self._claim("REFUTED"),
+            self._claim("UNVERIFIED"),
+            self._claim("EXPIRED"),
+        ]
+        self.assertEqual(compute_accuracy_rate(claims), 0.75)
+
+    def test_accuracy_rate_is_neutral_without_resolved_claims(self):
+        self.assertEqual(compute_accuracy_rate([self._claim("PENDING")]), 0.5)
+        self.assertEqual(compute_accuracy_rate([]), 0.5)
+
+    def test_prediction_score_only_uses_high_value_claims(self):
+        claims = [
+            self._claim("CONFIRMED", "breaking"),
+            self._claim("REFUTED", "exclusive"),
+            self._claim("CONFIRMED", "general"),
+            self._claim("CONFIRMED", "statistic"),
+        ]
+        self.assertEqual(compute_prediction_score(claims), 0.5)
+
+    def test_prediction_score_falls_back_to_accuracy_without_high_value_claims(self):
+        claims = [
+            self._claim("CONFIRMED"),
+            self._claim("CONFIRMED"),
+            self._claim("CONFIRMED"),
+            self._claim("REFUTED"),
+        ]
+        self.assertEqual(compute_prediction_score(claims), compute_accuracy_rate(claims))
+
+    def test_correction_score_double_weights_refutations(self):
+        self.assertEqual(compute_correction_score([self._claim("CONFIRMED")]), 1.0)
+        claims = [self._claim("REFUTED")] + [self._claim("CONFIRMED")] * 9
+        self.assertAlmostEqual(compute_correction_score(claims), 0.8)
+
+    def test_correction_score_never_goes_negative(self):
+        claims = [self._claim("REFUTED")] * 3 + [self._claim("CONFIRMED")]
+        self.assertEqual(compute_correction_score(claims), 0.0)
+
+    def test_score_to_grade_boundaries(self):
+        cases = [
+            (100, "A+"), (90, "A+"), (89.9, "A"), (85, "A"), (80, "A-"),
+            (75, "B+"), (70, "B"), (65, "B-"), (60, "C+"), (55, "C"),
+            (50, "C-"), (49.9, "D"), (40, "D"), (39.9, "F"), (0, "F"),
+        ]
+        for score, grade in cases:
+            with self.subTest(score=score):
+                self.assertEqual(score_to_grade(score), grade)
+
     def test_source_quality_uses_configured_tier1_names(self):
         claims = [
             {"verdict": "CONFIRMED", "verdict_source": "Reuters"},
