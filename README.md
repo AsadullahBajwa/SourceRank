@@ -571,4 +571,4 @@ SourceRank scores are analytical estimates based on publicly available data. The
 
 ## License
 
-MIT
+Released under the [MIT License](LICENSE).
