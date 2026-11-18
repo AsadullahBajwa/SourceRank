@@ -77,7 +77,12 @@ from scripts.source_gap_plan import (
     source_counts_by_country_category,
     write_csv as write_gap_csv,
 )
-from scripts.site_check import missing_site_files, validate_local_links, validate_site
+from scripts.site_check import (
+    missing_site_files,
+    validate_local_links,
+    validate_methodology_weights,
+    validate_site,
+)
 from scripts.source_taxonomy import is_valid_category, normalize_category
 from time_utils import parse_utc, utc_now
 
@@ -1444,6 +1449,37 @@ class SiteCheckTests(unittest.TestCase):
 
 
 class ExtensionCheckTests(unittest.TestCase):
+    def _methodology_errors(self, rows, weights):
+        with tempfile.TemporaryDirectory() as site_dir:
+            with open(os.path.join(site_dir, "methodology.html"), "w", encoding="utf-8") as f:
+                f.write("<table>" + "".join(
+                    f"<tr><td>{label}</td><td>{percent}%</td><td>...</td></tr>"
+                    for label, percent in rows
+                ) + "</table>")
+            return validate_methodology_weights(site_dir, weights)
+
+    def test_methodology_weights_match_config(self):
+        errors = self._methodology_errors(
+            [("Accuracy Rate", "40"), ("Spam Index", "10")],
+            {"accuracy_rate": 0.4, "spam_index": 0.1},
+        )
+        self.assertEqual(errors, [])
+
+    def test_methodology_weights_report_drift(self):
+        errors = self._methodology_errors(
+            [("Accuracy Rate", "40"), ("Legacy Metric", "5")],
+            {"accuracy_rate": 0.35, "spam_index": 0.1},
+        )
+        self.assertEqual(errors, [
+            "methodology.html lists accuracy_rate at 40% but config uses 35%",
+            "methodology.html is missing the spam_index weight (10%)",
+            "methodology.html lists legacy_metric, which is not in config.SCORE_WEIGHTS",
+        ])
+
+    def test_published_methodology_matches_config(self):
+        site_dir = os.path.join(config.BASE_DIR, "output", "site")
+        self.assertEqual(validate_methodology_weights(site_dir, config.SCORE_WEIGHTS), [])
+
     def test_missing_extension_files_reports_required_files(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(os.path.join(tmpdir, "manifest.json"), "w", encoding="utf-8") as f:

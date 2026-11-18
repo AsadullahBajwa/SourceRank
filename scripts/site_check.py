@@ -31,6 +31,7 @@ REQUIRED_DATA_FILES = [
 ]
 
 LOCAL_HREF_RE = re.compile(r'href=["\']([^"\']+\.html(?:\?[^"\']*)?)["\']')
+WEIGHT_ROW_RE = re.compile(r"<tr><td>([^<]+)</td><td>(\d+(?:\.\d+)?)%</td>")
 
 
 def missing_site_files(site_dir: str, data_dir: str) -> list[str]:
@@ -88,9 +89,34 @@ def validate_local_links(site_dir: str) -> list[str]:
     return errors
 
 
+def validate_methodology_weights(site_dir: str, weights: dict[str, float]) -> list[str]:
+    """Check the methodology page's score formula table against config weights."""
+    with open(os.path.join(site_dir, "methodology.html"), encoding="utf-8") as f:
+        html = f.read()
+    page_weights = {
+        label.strip().lower().replace(" ", "_"): float(percent)
+        for label, percent in WEIGHT_ROW_RE.findall(html)
+    }
+    errors = []
+    for key, weight in weights.items():
+        expected = round(weight * 100, 1)
+        if key not in page_weights:
+            errors.append(f"methodology.html is missing the {key} weight ({expected:g}%)")
+        elif page_weights[key] != expected:
+            errors.append(
+                f"methodology.html lists {key} at {page_weights[key]:g}% "
+                f"but config uses {expected:g}%"
+            )
+    for key in sorted(set(page_weights) - set(weights)):
+        errors.append(f"methodology.html lists {key}, which is not in config.SCORE_WEIGHTS")
+    return errors
+
+
 def main() -> None:
     site_dir = os.path.join(config.BASE_DIR, "output", "site")
     errors = validate_site(site_dir, config.OUTPUT_DIR)
+    if not errors:
+        errors.extend(validate_methodology_weights(site_dir, config.SCORE_WEIGHTS))
     if errors:
         for error in errors:
             print(error)
