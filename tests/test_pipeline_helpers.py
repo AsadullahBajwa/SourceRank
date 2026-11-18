@@ -16,6 +16,7 @@ from pipeline.scorer import (
     compute_correction_score,
     compute_prediction_score,
     compute_source_quality,
+    compute_spam_index,
     public_claim_record,
     score_journalist,
     score_to_grade,
@@ -78,7 +79,7 @@ from scripts.source_gap_plan import (
 )
 from scripts.site_check import missing_site_files, validate_local_links, validate_site
 from scripts.source_taxonomy import is_valid_category, normalize_category
-from time_utils import parse_utc
+from time_utils import parse_utc, utc_now
 
 
 class TimeUtilsTests(unittest.TestCase):
@@ -190,6 +191,37 @@ class ScorerTests(unittest.TestCase):
         conn.close()
         self.assertTrue(score["eligible"])
         self.assertEqual(score["min_resolved_claims"], 1)
+
+    @staticmethod
+    def _tweets_db(rows):
+        conn = sqlite3.connect(":memory:")
+        conn.execute("CREATE TABLE tweets (handle TEXT, created_at TEXT, is_retweet INTEGER)")
+        conn.executemany("INSERT INTO tweets VALUES (?, ?, ?)", rows)
+        return conn
+
+    def test_spam_index_volume_tiers(self):
+        recent = (utc_now() - datetime.timedelta(days=1)).isoformat()
+        # Thresholds are on the 30-day daily average: <=5, <=10, <=20, above.
+        cases = [(0, 1.0), (150, 1.0), (151, 0.8), (300, 0.8),
+                 (301, 0.6), (600, 0.6), (601, 0.4)]
+        for count, expected in cases:
+            with self.subTest(tweets=count):
+                conn = self._tweets_db([("alpha", recent, 0)] * count)
+                self.assertEqual(compute_spam_index("Alpha", conn), expected)
+                conn.close()
+
+    def test_spam_index_ignores_retweets_and_old_tweets(self):
+        recent = (utc_now() - datetime.timedelta(days=1)).isoformat()
+        old = (utc_now() - datetime.timedelta(days=45)).isoformat()
+        rows = (
+            [("alpha", recent, 0)] * 100
+            + [("alpha", recent, 1)] * 500
+            + [("alpha", old, 0)] * 500
+            + [("beta", recent, 0)] * 500
+        )
+        conn = self._tweets_db(rows)
+        self.assertEqual(compute_spam_index("alpha", conn), 1.0)
+        conn.close()
 
     def test_score_journalist_verdict_counts_cover_every_claim(self):
         conn = sqlite3.connect(":memory:")
