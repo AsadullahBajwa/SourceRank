@@ -377,6 +377,13 @@ class VerifierTests(unittest.TestCase):
                     [{"source_name": "Reuters", "title": headline, "summary": ""}],
                 ))
 
+    def test_find_contradiction_skips_claims_that_state_the_refutation(self):
+        contradiction = find_contradiction(
+            "Khan was not arrested, police say",
+            [{"source_name": "Reuters", "title": "Police confirm Khan not arrested", "summary": ""}],
+        )
+        self.assertIsNone(contradiction)
+
     def test_find_contradiction_still_matches_whole_words(self):
         contradiction = find_contradiction(
             "The party won the by-election",

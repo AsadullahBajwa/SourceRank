@@ -334,6 +334,11 @@ def find_contradiction(claim_text: str, articles: list[dict]) -> dict | None:
     for claim_re, refute_re in _CONTRADICTION_RES:
         if not claim_re.search(claim_text):
             continue
+        # "X was not arrested" matches both sides of the arrested pair; an
+        # article saying the same thing agrees with the claim, it doesn't
+        # refute it.
+        if refute_re.search(claim_text):
+            continue
         for article in articles:
             article_text = " ".join(
                 part for part in (article.get("title", ""), article.get("summary", "")) if part
