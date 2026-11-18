@@ -505,7 +505,7 @@ sequenceDiagram
 |---|---|---:|
 | Accuracy Rate | Percent of resolved claims confirmed true | 40% |
 | Prediction Score | Breaking, exclusive, and prediction claim accuracy | 25% |
-| Correction Behavior | Penalty for uncorrected refuted claims | 15% |
+| Correction Behavior | Penalty for refuted claims (correction detection not built yet) | 15% |
 | Source Quality | Share of confirmations from tier-one sources | 10% |
 | Spam Index | Penalty for high-volume original posting patterns | 10% |
 

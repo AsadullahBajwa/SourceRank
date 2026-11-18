@@ -56,8 +56,11 @@ def compute_prediction_score(claims: list[dict]) -> float:
 
 def compute_correction_score(claims: list[dict]) -> float:
     """
-    Penalize for refuted claims with no follow-up correction.
-    Returns a score between 0.0 (many uncorrected refutations) and 1.0 (clean).
+    Penalize refuted claims at twice their share of all claims.
+    Returns a score between 0.0 (half or more refuted) and 1.0 (none refuted).
+
+    Follow-up corrections aren't detected yet, so a refuted claim the
+    journalist later corrected still counts against them.
     """
     refuted = [c for c in claims if c["verdict"] == "REFUTED"]
     if not refuted:

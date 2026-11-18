@@ -56,7 +56,7 @@
       <tbody>
         <tr><td>Accuracy Rate</td><td>40%</td><td>Share of resolved claims that were confirmed.</td></tr>
         <tr><td>Prediction Score</td><td>25%</td><td>Accuracy on breaking, exclusive, and prediction claims.</td></tr>
-        <tr><td>Correction Behavior</td><td>15%</td><td>Penalty for refuted claims without a detected correction signal.</td></tr>
+        <tr><td>Correction Behavior</td><td>15%</td><td>Penalty for refuted claims, weighted at twice their share of all claims.</td></tr>
         <tr><td>Source Quality</td><td>10%</td><td>Share of confirmations from configured tier-one sources.</td></tr>
         <tr><td>Spam Index</td><td>10%</td><td>Penalty for unusually high original tweet volume.</td></tr>
       </tbody>
@@ -91,6 +91,7 @@
       <li>Current rankings are only as strong as local tweet coverage.</li>
       <li>RSS and Google News evidence can miss stories that are not indexed or published in accessible feeds.</li>
       <li>Contradiction detection is rule-based and intentionally conservative.</li>
+      <li>Correction behavior does not yet detect when a journalist corrects a refuted claim, so every refutation is penalized the same way.</li>
       <li>Scores are analytical estimates, not judgments of character or professional standing.</li>
     </ul>
   </section>
