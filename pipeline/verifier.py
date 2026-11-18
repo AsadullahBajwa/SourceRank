@@ -75,6 +75,18 @@ CONTRADICTION_PAIRS = [
 ]
 
 
+def _whole_words(pattern: str) -> re.Pattern:
+    # Plain substring matching let "dead" hit "deadline" and "won" hit
+    # "wonder", which turned unrelated claims into refutations.
+    return re.compile(rf"\b(?:{pattern})\b", re.IGNORECASE)
+
+
+_CONTRADICTION_RES = [
+    (_whole_words(claim_pat), _whole_words(refute_pat))
+    for claim_pat, refute_pat in CONTRADICTION_PAIRS
+]
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -319,14 +331,14 @@ def search_google_news(claim_text: str, entities: list[str],
 
 def find_contradiction(claim_text: str, articles: list[dict]) -> dict | None:
     """Return the first article whose text directly contradicts the claim."""
-    for claim_pat, refute_pat in CONTRADICTION_PAIRS:
-        if not re.search(claim_pat, claim_text, re.IGNORECASE):
+    for claim_re, refute_re in _CONTRADICTION_RES:
+        if not claim_re.search(claim_text):
             continue
         for article in articles:
             article_text = " ".join(
                 part for part in (article.get("title", ""), article.get("summary", "")) if part
             )
-            if re.search(refute_pat, article_text, re.IGNORECASE):
+            if refute_re.search(article_text):
                 return article
     return None
 

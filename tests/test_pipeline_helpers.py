@@ -364,6 +364,26 @@ class VerifierTests(unittest.TestCase):
         )
         self.assertIsNotNone(contradiction)
 
+    def test_find_contradiction_ignores_keywords_inside_other_words(self):
+        cases = [
+            ("Budget deadline set for Friday", "Hostages found alive after raid"),
+            ("Analysts wonder about the vote count", "Rival lost the seat"),
+            ("Squad selected for the cup final", "Coach admits side lost focus"),
+        ]
+        for claim, headline in cases:
+            with self.subTest(claim=claim):
+                self.assertIsNone(find_contradiction(
+                    claim,
+                    [{"source_name": "Reuters", "title": headline, "summary": ""}],
+                ))
+
+    def test_find_contradiction_still_matches_whole_words(self):
+        contradiction = find_contradiction(
+            "The party won the by-election",
+            [{"source_name": "Reuters", "title": "Rival conceded defeat", "summary": ""}],
+        )
+        self.assertIsNotNone(contradiction)
+
     def test_filter_relevant_articles_requires_claim_overlap(self):
         matches = filter_relevant_articles(
             "The cabinet minister will resign next week",
